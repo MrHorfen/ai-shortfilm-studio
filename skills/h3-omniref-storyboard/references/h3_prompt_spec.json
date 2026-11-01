@@ -1,0 +1,66 @@
+{
+  "version": "2026-10-29",
+  "source": [
+    "https://minimaxh3.co/prompt-guide",
+    "https://minimax-h3-ai.com/blog/minimax-h3-prompt-guide/",
+    "comfyui_embedded_docs/docs/MiniMaxH3ReferenceToVideo"
+  ],
+  "sections": [
+    "subject_definitions",
+    "summary",
+    "retention_analysis",
+    "detailed_description",
+    "overall_soundscape",
+    "non_diegetic_music"
+  ],
+  "forbidden_sections": [
+    "dialogue:",
+    "input_rules:",
+    "language_control:"
+  ],
+  "forbidden_tokens": [
+    "【台词】",
+    "【画面】",
+    "【表演】",
+    "【镜头】",
+    "【声音】"
+  ],
+  "dialogue": {
+    "tag": "<d>",
+    "language_tag": "[Chinese]",
+    "speaker_id_pattern": "(S\\d+)",
+    "speaker_outside_tag": true,
+    "exact_words_only": true,
+    "line_separator": " ",
+    "no_dialogue_sentence": "No spoken dialogue in this shot; characters stay silent, never read the descriptive text aloud.",
+    "empty_shot_sentence": "Empty shot with no characters and no human voice; never read the descriptive text aloud."
+  },
+  "retention_values": [
+    "fully_preserved",
+    "partially_preserved",
+    "attribute_transfer",
+    "weak_reference",
+    "fully_copy",
+    "partially_copy",
+    "reference",
+    "weak_reference (audio)"
+  ],
+  "task_types": [
+    "keyframe completion",
+    "reference generation",
+    "video editing",
+    "video continuation",
+    "audio reuse",
+    "audio reference"
+  ],
+  "music_empty_value": "N/A",
+  "shot_prefix": "[Shot ",
+  "body_language": "en",
+  "word_range": [350, 500],
+  "dialogue_time": {
+    "note": "本机实测补充，非官方语法：无时间锚点时模型会把台词全堆到镜头结尾",
+    "manual_prefix_format": "[X.Xs]",
+    "phrase_format": "At about {t} s, ",
+    "auto_placement": "first line at 1.0s, evenly spaced, clamp to [0, duration-0.3]"
+  }
+}

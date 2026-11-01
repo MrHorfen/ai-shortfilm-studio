@@ -1,0 +1,14 @@
+# 项目数据与缓存
+projects/
+.frames/
+__pycache__/
+*.pyc
+*.log
+
+# 模型权重（一律不入库，用户自行从官方页面下载）
+models/
+*.safetensors
+
+# 生成物
+*.mp4
+*.jpg

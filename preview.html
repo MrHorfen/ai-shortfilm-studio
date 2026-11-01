@@ -1,0 +1,3899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>分镜工作台 · 原型</title>
+<style>
+:root{
+  --bg:#0b0c0f; --card:#14161a; --card2:#1a1c21; --line:#2b3038;
+  --txt:#e8eaef; --mut:#8b93a3; --dim:#5c6371;
+  --acc:#6c8cff; --ok:#3ddc84; --warn:#f5a623; --bad:#ff6b6b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:"PingFang SC","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+  font-size:14px;-webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#2b3038;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{height:100%;display:flex;flex-direction:column}
+.grow{flex:1;min-width:0}
+
+/* ---------- 顶栏 ---------- */
+.top{height:50px;flex:0 0 50px;display:flex;align-items:center;gap:14px;
+  padding:0 16px;border-bottom:1px solid var(--line);background:#0e1013}
+.back{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);
+  background:transparent;color:var(--mut);font-size:14px;line-height:1}
+.back:hover{color:var(--txt);border-color:#3a4150}
+.pname{font-size:14px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.sel{background:var(--card2);border:1px solid var(--line);border-radius:7px;
+  padding:5px 26px 5px 10px;color:var(--txt);font-size:13px;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--mut) 50%),
+                   linear-gradient(135deg,var(--mut) 50%,transparent 50%);
+  background-position:calc(100% - 13px) 12px,calc(100% - 9px) 12px;
+  background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+.steps{display:flex;align-items:center;gap:6px;margin:0 auto}
+.step{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;
+  font-size:13px;color:var(--mut);border:1px solid transparent;background:transparent;
+  transition:.15s;white-space:nowrap}
+.step:hover{color:var(--txt)}
+.step.on{color:var(--txt);background:#1b1e24;border-color:#333a45}
+.step .ico{font-size:12px;opacity:.8}
+.dash{width:14px;height:1px;background:#333a45}
+.savebadge{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+
+/* ---------- 工具条 ---------- */
+.bar{height:46px;flex:0 0 46px;display:flex;align-items:center;gap:10px;
+  padding:0 16px;border-bottom:1px solid var(--line);background:#0f1114;overflow-x:auto}
+.bar>.btn,.bar>.chip,.bar>.seg,.bar>.sel{flex:0 0 auto}
+.chip{font-size:12px;color:var(--mut);padding:4px 10px;border-radius:6px;border:1px solid var(--line);
+  white-space:nowrap}
+.chip b{color:var(--txt);font-weight:500}
+.stat{font-size:12px;color:var(--dim);margin-left:4px;white-space:nowrap}
+.btn{background:#1b1e24;border:1px solid var(--line);color:var(--txt);
+  border-radius:7px;padding:6px 13px;font-size:12.5px;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:#3a4150;background:#23262d}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.primary:hover{background:#5878ee;border-color:#5878ee}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------- 视图 ---------- */
+.view{flex:1;min-height:0;display:none;flex-direction:column}
+.view.on{display:flex}
+
+/* ---------- 入口页 ---------- */
+.home{flex:1;min-height:0;overflow-y:auto;padding:44px 32px}
+.home .htitle{font-size:22px;font-weight:600;letter-spacing:.3px}
+.home .hsub{font-size:13px;color:var(--mut);margin-top:9px}
+.hcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;
+  margin-top:26px;max-width:920px}
+.hcard{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:20px 22px;cursor:pointer;transition:.16s}
+.hcard:hover{border-color:#3f569c;background:#171a21}
+.hicon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;background:#1b2130;color:var(--acc);font-size:15px;border:1px solid #2f3a55}
+.hname{font-size:15px;font-weight:600;margin-top:12px}
+.hdesc{font-size:12.5px;color:var(--mut);margin-top:8px;line-height:1.75}
+.hmeta{font-size:11px;color:var(--dim);margin-top:14px}
+.hlist{max-width:920px;margin-top:30px}
+.hlt{font-size:11px;color:var(--dim);letter-spacing:.5px;margin-bottom:8px;
+  display:flex;align-items:center;gap:8px}
+.hlt .addp{color:var(--acc);cursor:pointer;letter-spacing:0}
+.hrow{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;
+  border:1px solid var(--line);border-radius:9px;background:#101216;font-size:12.5px;cursor:pointer}
+.hrow:hover{border-color:#3a4150}
+.hrow span{font-size:11px;color:var(--dim)}
+.delp{width:22px;height:22px;flex:0 0 22px;margin-left:10px;border-radius:6px;
+  border:1px solid var(--line);background:transparent;color:var(--dim);
+  cursor:pointer;font-size:11px;line-height:1}
+.delp:hover{border-color:#e2564d;color:#e2564d}
+
+/* ---------- 快速模式 ---------- */
+.quickwrap{flex:1;min-height:0;display:grid;grid-template-columns:minmax(380px,1fr) 400px;
+  grid-template-rows:minmax(0,1fr)}
+.qleft{min-height:0;overflow-y:auto;padding:22px 26px 30px}
+.qright{border-left:1px solid var(--line);display:flex;flex-direction:column;
+  min-height:0;background:#0d0f12}
+.qprev{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:18px}
+.qprev .frame{height:205px}
+.qfoot{flex:0 0 auto;padding:12px 14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--dim);line-height:1.8}
+.gtype{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.tbtn{background:#15181d;border:1px solid var(--line);border-radius:8px;padding:7px 14px;
+  color:var(--mut);font-size:12.5px;transition:.12s}
+.tbtn:hover{color:var(--txt);border-color:#3a4150}
+.tbtn.on{background:#1e2a4a;border-color:var(--acc);color:#fff}
+.upload{border:1px dashed #333a45;border-radius:9px;padding:16px;text-align:center;
+  font-size:12px;color:var(--dim);cursor:pointer;transition:.14s}
+.upload:hover{border-color:#4a5364;color:var(--mut)}
+.upload.on{border-color:#3f569c;color:#cfe0ff;background:#141a28}
+.qclearrow{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:11.5px;color:var(--mut)}
+.qclearrow .link{color:var(--acc)}
+
+/* ---------- 剧本页 ---------- */
+.scriptwrap{flex:1;min-height:0;display:grid;
+  grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.side{border-right:1px solid var(--line);padding:10px 8px;background:#0d0f12;min-height:0}
+.side.col{display:flex;flex-direction:column;overflow:hidden;padding:0}
+.sidehead{font-size:11px;color:var(--dim);padding:12px 12px 8px;letter-spacing:.5px;
+  display:flex;align-items:center}
+.sidehead .link{color:var(--acc);cursor:pointer;font-size:11px;font-weight:400}
+.scenelist{flex:1;min-height:0;overflow-y:auto;padding:0 8px 8px}
+.sidefoot{flex:0 0 auto;border-top:1px solid var(--line);padding:9px 12px;
+  font-size:11px;color:var(--dim);line-height:1.7}
+.sitem{padding:8px 9px;border-radius:8px;border:1px solid transparent;
+  cursor:pointer;margin-bottom:3px;transition:.12s}
+.sitem:hover{background:#15181d}
+.sitem.on{background:#191d26;border-color:#2f3a55}
+.sitem .sn{font-size:12.5px;color:var(--txt)}
+.sitem .sd{font-size:10.5px;color:var(--dim);margin-top:3px;display:flex;gap:8px}
+
+.scriptmain{display:flex;flex-direction:column;min-height:0;padding:14px 20px 12px}
+.shead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.shead .h{font-size:15px;font-weight:600}
+#scriptBody{flex:1;min-height:0;resize:none;width:100%;background:var(--card);
+  border:1px solid var(--line);border-radius:9px;padding:16px 18px;color:var(--txt);
+  font-size:13px;line-height:2;font-family:inherit;outline:none}
+#scriptBody:focus{border-color:#3f569c}
+.sfoot{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding-top:12px;border-top:1px solid var(--line);margin-top:10px}
+.sfoot .hint{font-size:11px;color:var(--dim)}
+.statechip{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #2c5137;
+  background:#12241a;color:var(--ok)}
+.statechip.bad{border-color:#5c2b2b;background:#241212;color:var(--bad)}
+
+/* ---------- 设定页 ---------- */
+.styleline{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:9px 18px;
+  font-size:12px;color:var(--mut);border-bottom:1px solid var(--line);background:#0e1013}
+.styleline .dotc{width:6px;height:6px;border-radius:50%;background:var(--acc)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;flex:0 0 auto}
+.seg button{background:transparent;border:0;color:var(--mut);font-size:12px;padding:5px 11px;
+  white-space:nowrap}
+.seg button.on{background:#1e2a4a;color:#fff}
+.seg button+button{border-left:1px solid var(--line)}
+.castwrap{flex:1;min-height:0;overflow-y:auto;padding:16px 18px 24px}
+.castgrid{display:flex;flex-direction:column;gap:0}
+/* ---------- 资产库 ---------- */
+.libwrap{flex:1;min-height:0;overflow-y:auto;padding:14px 18px 26px}
+.libinner{display:block}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.libcard{position:relative;aspect-ratio:1/1;border:2px solid transparent;border-radius:9px;
+  overflow:hidden;background:#08090b;cursor:pointer}
+.libcard:hover{border-color:#3f569c}
+.libcard.sel{border-color:#d9b25f}
+.libcard img,.libcard video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+.libcard .lbtag{position:absolute;left:0;right:0;bottom:0;padding:16px 7px 6px;font-size:10.5px;
+  color:#e6e8ee;background:linear-gradient(transparent,rgba(0,0,0,.88));
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.libcard .lbstate{position:absolute;top:5px;left:5px;font-size:10px;padding:2px 6px;
+  border-radius:5px;background:rgba(0,0,0,.68);color:#c3cbdb}
+.libcard .lbstate.ok{background:#20305a;color:#ffd98a}
+.libempty{grid-column:1/-1;padding:70px 0;text-align:center;color:var(--dim);font-size:12px}
+.libsect{margin-bottom:22px}
+.libsechead{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12px;font-weight:600;color:#cfd6e4}
+.libsechead b{font-size:10.5px;font-weight:400;color:var(--dim)}
+.libsechead:after{content:'';flex:1;height:1px;background:var(--line)}
+.libpick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.cc{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;transition:.18s}
+.cc:hover{border-color:#3a4150}
+.cc.gen{opacity:.5;border-color:var(--acc)}
+.ccimg{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;height:134px;
+  background:#08090b;grid-auto-rows:1fr;cursor:pointer}
+.ccimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.arow2{display:grid;grid-template-columns:190px minmax(0,1fr) 84px;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--line);align-items:start}
+.ahead{display:flex;gap:9px;cursor:pointer;align-items:center}
+.athumb{width:46px;height:46px;flex:0 0 46px;border-radius:8px;overflow:hidden;position:relative;
+  background:#08090b;border:1px solid var(--line)}
+.athumb img{width:100%;height:100%;object-fit:cover;display:block}
+.athumb span{position:absolute;inset:0;
+  background:linear-gradient(160deg,hsl(var(--h) 34% 34%),hsl(var(--h) 26% 12%))}
+.ameta{min-width:0;display:flex;flex-direction:column;gap:3px}
+.ameta b{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ameta .ast{font-size:10.5px;color:var(--dim)}
+.ameta .badge{align-self:flex-start}
+.apool{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;min-height:72px}
+.cand{position:relative;padding-top:100%;border-radius:7px;overflow:hidden;cursor:pointer;
+  border:2px solid transparent;background:#08090b}
+.cand.sel{border-color:var(--acc)}
+.cand img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cand .cdel,.cand .cred{position:absolute;top:3px;width:18px;height:18px;border:none;border-radius:5px;
+  background:rgba(0,0,0,.62);color:#ddd;cursor:pointer;font-size:10px;line-height:1;z-index:2}
+.cand .cdel{right:3px}
+.cand .cred{left:3px}
+.cand .cdel:hover{color:#ff8f8f;background:rgba(120,20,20,.82)}
+.cand .cred:hover{color:#fff;background:rgba(40,80,160,.85)}
+.candempty{grid-column:1/-1;display:flex;align-items:center;justify-content:center;
+  min-height:72px;border:1px dashed var(--line);border-radius:7px;color:var(--dim);font-size:11px}
+.aacts{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.aacts .astat{font-size:10px;color:var(--dim);text-align:center;min-height:12px}
+.aacts .delcc{align-self:flex-end}
+.aedit{grid-column:1/-1;display:flex;gap:8px;align-items:flex-start;padding-top:4px}
+.aeditmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.aedit textarea{width:100%;height:58px;resize:vertical;background:#0b0d11;border:1px solid var(--line);
+  border-radius:7px;color:var(--txt);padding:8px;font-size:11.5px;line-height:1.5;font-family:inherit}
+.apreview{font-size:10.5px;line-height:1.5;color:var(--dim);max-height:34px;overflow:auto;white-space:pre-wrap}
+.aeditbtns{display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
+.cfprompt{max-height:min(48vh,360px);overflow:auto;font-size:11px;line-height:1.65;color:var(--mut);
+  background:#0b0d11;border:1px solid var(--line);border-radius:7px;padding:8px;white-space:pre-wrap;margin-top:8px}
+.ccimg i{background:linear-gradient(160deg,hsl(var(--h) 34% 34%),hsl(var(--h) 26% 12%))}
+.ccimg i:nth-child(2){filter:brightness(.86)}
+.ccimg i:nth-child(3){filter:brightness(.7)}
+.ccimg i:nth-child(4){filter:brightness(.94)}
+.ccf{display:flex;align-items:center;gap:7px;padding:8px 10px 5px}
+.ccname{font-size:12.5px;color:var(--txt)}
+.ccv{display:flex;align-items:center;gap:6px;padding:0 10px 10px;font-size:11px;color:var(--dim)}
+.lock{width:20px;height:20px;border-radius:5px;border:1px solid var(--line);
+  background:transparent;color:var(--dim);font-size:10px;line-height:1;padding:0}
+.lock.on{color:var(--ok);border-color:#2c5137}
+.addcc{border:1px dashed #333a45;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;color:var(--dim);font-size:26px;min-height:186px;
+  cursor:pointer;background:transparent;transition:.15s}
+.addcc:hover{border-color:#4a5364;color:var(--mut)}
+.delcc{width:20px;height:20px;border-radius:5px;border:1px solid var(--line);
+  background:transparent;color:var(--dim);font-size:10px;line-height:1;padding:0}
+.delcc:hover{color:#e06c75;border-color:#5a2f33}
+
+/* ---------- 分镜三栏 ---------- */
+.cols{flex:1;min-height:0;display:grid;grid-template-columns:236px minmax(300px,0.9fr) minmax(420px,1.25fr);
+  grid-template-rows:minmax(0,1fr);align-items:stretch}
+.side.col2{display:flex;flex-direction:column;overflow:hidden;padding:0}
+.item{display:flex;gap:9px;align-items:center;padding:7px 8px;border-radius:8px;
+  border:1px solid transparent;cursor:pointer;margin-bottom:2px;transition:.12s}
+.item:hover{background:#15181d}
+.item.on{background:#191d26;border-color:#2f3a55}
+.thumb{width:40px;height:30px;border-radius:5px;flex:0 0 40px;position:relative;overflow:hidden}
+.thumb i{position:absolute;inset:0;background:linear-gradient(135deg,
+  hsl(var(--h) 45% 26%),hsl(calc(var(--h) + 40) 55% 13%))}
+.item .info{flex:1;min-width:0}
+.item .no{font-size:12.5px;color:var(--txt);font-weight:500}
+.item .d{font-size:11px;color:var(--dim);margin-top:2px;display:flex;gap:7px;align-items:center}
+.badge{font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid var(--line);color:var(--dim)}
+.badge.img{color:#7fa9ff;border-color:#33436b;background:#162034}
+.badge.vid{color:var(--ok);border-color:#2c5137;background:#12241a}
+.badge.role{color:#c9b6ff;border-color:#3c3457;background:#1b1726}
+
+.mid{overflow-y:auto;padding:18px 20px 26px;min-height:0}
+.shothead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.shotno{font-size:15px;font-weight:600}
+.tag{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:2px 7px}
+.fieldlbl{font-size:11.5px;color:var(--dim);margin:15px 0 7px;letter-spacing:.3px}
+.fold{margin:2px 0}
+.fold summary{cursor:pointer;font-size:10px;color:var(--dim);letter-spacing:.5px;
+  padding:7px 0;list-style:none;user-select:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary:before{content:'▸';margin-right:5px;font-size:9px}
+.fold[open] summary:before{content:'▾'}
+.fold .fieldlbl{margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.cchip{font-size:12px;padding:4px 9px;border-radius:6px;border:1px solid var(--line);
+  background:#15181d;color:var(--mut);transition:.12s}
+.cchip:hover{color:var(--txt)}
+.cchip.on{background:#1e2a4a;border-color:#3f569c;color:#cfe0ff}
+.cchip .at{display:inline-block;margin-left:5px;padding:0 3px;border-radius:3px;
+  color:#8fa4d8;font-size:11px;cursor:pointer}
+.cchip .at:hover{background:#2a3a60;color:#dbe6ff}
+.assoc{display:flex;flex-direction:column;gap:7px}
+.arow{display:flex;align-items:flex-start;gap:8px}
+.arow b{font-size:11.5px;font-weight:400;color:var(--dim);flex:0 0 34px;padding-top:5px}
+textarea{width:100%;min-height:150px;resize:vertical;background:var(--card);
+  border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--txt);
+  font-size:13px;line-height:1.75;font-family:inherit;outline:none}
+textarea:focus{border-color:#3f569c}
+textarea::placeholder{color:#4d5461}
+.lineinput{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:8px 11px;color:var(--txt);font-size:12.5px;font-family:inherit;outline:none}
+.lineinput:focus{border-color:#3f569c}
+.dline{min-height:62px;line-height:1.6;resize:vertical;white-space:pre-wrap}
+.dialtime{display:flex;flex-direction:column;gap:4px;margin:7px 0 2px}
+.dialtime .dtrow{display:flex;align-items:center;gap:7px}
+.dialtime .dtin{width:64px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:6px;
+  padding:3px 6px;color:var(--txt);font-size:11.5px;font-family:inherit;outline:none}
+.dialtime .dtin:focus{border-color:#3f569c}
+.dialtime .dtlbl{font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fieldlbl .link{color:var(--acc);cursor:pointer;font-weight:400}
+.hintbar{font-size:11px;color:var(--dim);margin-top:7px;display:flex;justify-content:space-between}
+.durs{display:flex;gap:7px;margin-top:7px;flex-wrap:wrap}
+.dbtn{background:#15181d;border:1px solid var(--line);border-radius:7px;
+  padding:6px 13px;color:var(--mut);font-size:12.5px;transition:.12s}
+.dbtn:hover{border-color:#3a4150;color:var(--txt)}
+.dbtn.on{background:#1e2a4a;border-color:var(--acc);color:#fff}
+.dbtn.dis{opacity:.32;cursor:not-allowed}
+
+.genrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px;
+  padding-top:14px;border-top:1px solid var(--line)}
+.genrow .meta{flex:1 1 100%;font-size:11.5px;color:var(--dim);line-height:1.75}
+.genrow .grow{display:none}
+.genrow .btn.primary{margin-left:auto}
+.progress{margin-top:12px;display:none}
+.progress.on{display:block}
+.ptrack{height:4px;border-radius:2px;background:#22262e;overflow:hidden}
+.pfill{height:100%;width:0;background:linear-gradient(90deg,#4d6ce0,var(--acc));transition:width .18s}
+.ptext{font-size:11.5px;color:var(--mut);margin-top:7px;display:flex;justify-content:space-between}
+.log{margin-top:10px;font-size:11.5px;color:var(--dim);line-height:1.9;
+  background:#101318;border:1px solid #1e222a;border-radius:8px;padding:9px 11px;display:none}
+.log.on{display:block}
+
+.right{border-left:1px solid var(--line);display:flex;flex-direction:column;background:#0d0f12;
+  min-height:0;overflow:hidden}
+.rhead{height:38px;flex:0 0 38px;display:flex;align-items:center;gap:8px;padding:0 14px;
+  border-bottom:1px solid var(--line);font-size:12px;color:var(--mut)}
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  padding:16px;overflow:hidden}
+.frame{width:100%;height:100%;min-height:280px;border-radius:10px;overflow:hidden;
+  position:relative;background:#08090b;border:1px solid #1e222a}
+.frame .bgimg{position:absolute;inset:0;background:linear-gradient(135deg,
+  hsl(var(--h) 42% 22%),hsl(calc(var(--h) + 50) 48% 10%))}
+.frame .em{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:86%;text-align:center;font-size:12px;color:#5a6270;line-height:1.9}
+.frame .em b{display:block;font-size:13px;color:#7c8493;font-weight:500;margin-bottom:3px}
+.playbtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:42px;height:42px;border-radius:50%;
+  background:rgba(10,12,16,.66);border:1px solid rgba(255,255,255,.22);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;
+  backdrop-filter:blur(4px)}
+.playbtn:hover{background:rgba(108,140,255,.82);border-color:transparent}
+.frame .reftag{position:absolute;left:10px;bottom:10px;font-size:11px;
+  padding:4px 8px;border-radius:6px;background:rgba(10,12,16,.72);
+  border:1px solid rgba(255,255,255,.16);color:#dfe5f0;backdrop-filter:blur(4px)}
+.rfoot{flex:0 0 auto;padding:12px 14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--dim);line-height:1.8}
+
+/* ---------- 时间轴 ---------- */
+.tl{height:116px;flex:0 0 116px;border-top:1px solid var(--line);background:#12151b;
+  display:flex;flex-direction:column}
+.tlhead{height:30px;flex:0 0 30px;display:flex;align-items:center;gap:8px;padding:0 14px;
+  font-size:11px;color:var(--dim)}
+.tlbody{flex:1;display:flex;gap:7px;align-items:center;padding:0 14px 10px;overflow-x:auto}
+.tcard{flex:0 0 auto;height:62px;border-radius:7px;border:1px solid #2a2f3a;
+  background:#12151b;position:relative;overflow:hidden;cursor:pointer;transition:.12s;
+  padding:0;min-width:78px;display:flex;flex-direction:column}
+.tcard:hover{border-color:#3a4150}
+.tcard.on{border-color:var(--acc)}
+.tcard .bg{position:absolute;inset:22px 0 0;background:linear-gradient(135deg,
+  hsl(var(--h) 42% 24%),hsl(calc(var(--h) + 45) 50% 11%))}
+.tcard .cap{flex:0 0 22px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 7px;font-size:10.5px;color:#cfd6e2;background:#1a1d24;z-index:2}
+.tcard .cap b{font-weight:600;color:#e8ecf4}
+.tcard .shot{position:absolute;left:0;right:0;top:22px;bottom:0;width:100%;
+  height:calc(100% - 22px);object-fit:cover;z-index:1}
+
+/* ---------- 短片视图 ---------- */
+.filmmain{flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 18px 0}
+.player{flex:1;min-height:0;background:#171a21;border:1px solid #262b35;border-radius:11px;
+  position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.player .bgimg{position:absolute;inset:0;background:linear-gradient(135deg,
+  hsl(var(--h) 44% 20%),hsl(calc(var(--h) + 55) 46% 8%))}
+.player .em{position:relative;text-align:center;color:#5a6270;font-size:12.5px;line-height:2}
+.player .em b{display:block;color:#8a92a3;font-size:14px;font-weight:500;margin-bottom:4px}
+.controls{height:46px;display:flex;align-items:center;gap:14px;padding:0 4px;
+  font-size:12px;color:var(--mut)}
+.ctrl{background:none;border:0;color:var(--mut);font-size:15px;padding:4px 6px}
+.ctrl:hover{color:var(--txt)}
+.ctrl.big{font-size:19px}
+.clock{font-variant-numeric:tabular-nums;color:var(--dim)}
+.filmbar{height:52px;flex:0 0 52px;display:flex;align-items:center;gap:10px;padding:0 18px}
+.ruler{flex:0 0 18px;display:flex;justify-content:space-between;padding:0 14px;
+  font-size:10px;color:var(--dim);align-items:center;font-variant-numeric:tabular-nums}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);
+  background:#1b1e24;border:1px solid #333a45;color:var(--txt);font-size:12.5px;
+  padding:9px 16px;border-radius:9px;opacity:0;pointer-events:none;transition:.22s;z-index:9}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:rgba(8,10,14,.62);display:none;align-items:center;
+  justify-content:center;z-index:12}
+.modal.on{display:flex}
+.mo{width:min(520px,92vw);background:var(--card);border:1px solid var(--line);border-radius:12px;
+  overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.mohead{display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line);
+  font-size:13.5px;font-weight:600}
+.mohead .link{color:var(--mut);cursor:pointer}
+.mobody{padding:16px;display:flex;flex-direction:column;gap:7px;max-height:60vh;overflow-y:auto}
+.mlbl{font-size:11px;color:var(--dim);letter-spacing:.4px;margin-top:5px}
+.minput,.mta{background:#0f1116;border:1px solid var(--line);border-radius:8px;color:var(--txt);
+  font-size:12.5px;padding:8px 10px;font-family:inherit;outline:none}
+.minput:focus,.mta:focus{border-color:#3f569c}
+.mta{resize:vertical;min-height:72px;line-height:1.7}
+.mnote{font-size:12px;line-height:1.8;color:var(--mut);background:#0f1116;border:1px solid var(--line);
+  border-radius:8px;padding:10px;margin-bottom:8px}
+.hrow{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);
+  border-radius:8px;margin-bottom:6px;cursor:pointer;background:#0f1116}
+.hrow:hover{border-color:#3f569c}
+.hrow b{flex:0 0 62px;font-size:12px;color:#c9d6ff}
+.hrow span{font-size:12px;line-height:1.7;color:var(--mut)}
+.mofoot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.cands{display:none;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.cands.on{display:grid}
+.cands .cand{position:relative;border:2px solid transparent;border-radius:8px;overflow:hidden;
+  cursor:pointer;background:#0d0f14;transition:border-color .15s;padding-top:0;aspect-ratio:1/1}
+.cands .cand:hover{border-color:#3f569c}
+.cands .cand.on{border-color:#d9b25f}
+.cands .cand img,.cands .cand video{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block}
+#vcands{grid-template-columns:repeat(2,1fr)}
+#vcands .cand{aspect-ratio:16/9}
+#vcands .cand.vert{aspect-ratio:9/16}
+.cands .cand span{position:absolute;left:6px;top:6px;font-size:11px;font-weight:600;
+  padding:1px 6px;border-radius:6px;background:rgba(0,0,0,.65)}
+.cands .cand .del{position:absolute;right:5px;top:5px;font-size:11px;padding:1px 5px;
+  border-radius:5px;background:rgba(0,0,0,.65);color:#bbb;cursor:pointer}
+</style>
+</head>
+<body>
+<script>
+/* 直接双击打开会变成 file://，此时只提示正确入口，不做端口探测 */
+if (location.protocol === 'file:'){
+  document.body.innerHTML = '<div style="font:14px/1.9 system-ui;color:#cfd6e4;background:#0b0d11;' +
+    'height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">' +
+    '<b style="font-size:16px">请通过启动脚本打开</b>' +
+    '<div style="color:#8b93a3">先运行 start_studio.bat，再用它自动打开的地址访问本页（不要直接双击本文件）</div></div>';
+}
+</script>
+<div class="app">
+
+  <!-- 顶栏 -->
+  <div class="top">
+    <button class="back" id="backbtn" title="返回" data-go="home">‹</button>
+    <div class="pname" id="pname">AI 工作室</div>
+    <select class="sel" id="epsel" style="display:none"></select>
+
+    <div class="steps" id="steps">
+      <button class="step" data-view="script"><span class="ico">▤</span>剧本</button>
+      <div class="dash"></div>
+      <button class="step" data-view="cast"><span class="ico">◈</span>设定</button>
+      <div class="dash"></div>
+      <button class="step" data-view="shots"><span class="ico">▦</span>分镜</button>
+      <div class="dash"></div>
+      <button class="step" data-view="film"><span class="ico">▷</span>短片</button>
+    </div>
+
+    <button class="btn ghost sm" id="libbtn" onclick="goto('library')"
+      style="display:none;margin-right:10px">▣ 资产库</button>
+    <div class="savebadge" id="savebadge"><span class="dot"></span><span id="savetxt">已保存</span></div>
+  </div>
+
+  <!-- ============ 入口 ============ -->
+  <div class="view on" id="vhome">
+    <div class="home">
+      <div class="htitle">AI 视频工作室</div>
+      <div class="hsub">两条路：临时出一张图或一段片，或者做一整集有剧本的短片</div>
+      <div class="hcards">
+        <div class="hcard" data-go="quick">
+          <div class="hicon">⚡</div>
+          <div class="hname">快速生成</div>
+          <div class="hdesc">写一句提示词就出图或出片，不建项目、不排分镜。</div>
+          <div class="hmeta">文生图约 16 秒 · 视频 60–180 秒</div>
+        </div>
+        <div class="hcard" onclick="newProject()">
+          <div class="hicon">▤</div>
+          <div class="hname">全案编剧</div>
+          <div class="hdesc">剧本 → 设定 → 分镜 → 短片，角色与场景全程锁定。</div>
+          <div class="hmeta">适合多镜头连续短片 · 点一下新建项目</div>
+        </div>
+      </div>
+      <div class="hlist">
+        <div class="hlt">最近项目<span class="grow"></span>
+          <span class="addp" onclick="newProject()">＋ 新建项目</span></div>
+        <div id="hrows"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 快速生成 ============ -->
+  <div class="view" id="vquick">
+    <div class="quickwrap">
+      <div class="qleft">
+        <div class="fieldlbl">生成类型</div>
+        <div class="gtype" id="qseg"></div>
+
+        <div class="fieldlbl">提示词</div>
+        <textarea id="qprompt" placeholder="例如：矮人酒保在暖黄灯光下擦拭木酒杯，中景，固定机位，50mm"></textarea>
+
+        <div id="qimgblock" style="display:none">
+          <div class="fieldlbl">参考图</div>
+          <input type="file" id="qfile" accept="image/*" style="display:none" onchange="pickRef(this)">
+          <div class="upload" id="qupload" onclick="qpick()">点击选择图片（支持 png / jpg）</div>
+          <div class="qclearrow" id="qclearrow" style="display:none">
+            <span id="qfilename"></span>
+            <span class="link" onclick="qclear()">✕ 取消参考图</span>
+          </div>
+        </div>
+
+        <div id="qdurblock">
+          <div class="fieldlbl">时长</div>
+          <div class="durs" id="qdurs"></div>
+        </div>
+
+        <div class="genrow">
+          <div class="meta">模型：<span id="qmodel">Qwen-Image 2.1 Turbo</span><br>
+            预计 <span id="qest">约 16 秒</span></div>
+          <div class="grow"></div>
+          <button class="btn primary" id="qbtn" onclick="qgen()">生成图片</button>
+        </div>
+
+        <div class="progress" id="qprog">
+          <div class="ptrack"><div class="pfill" id="qpfill"></div></div>
+          <div class="ptext"><span id="qpstage">准备中</span><span id="qppct">0%</span></div>
+        </div>
+
+        <div class="log" id="qlog"></div>
+      </div>
+
+      <aside class="qright">
+        <div class="rhead"><span>结果</span><span class="grow"></span><span id="qstate">空</span></div>
+        <div class="qprev">
+          <div class="frame" id="qframe"><div class="em"><b>还没有结果</b>写好提示词后点生成</div></div>
+        </div>
+        <div class="qfoot" id="qfoot">快速模式是无状态的：结果不会写进项目，也不会占用分镜数据。</div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ 剧本 ============ -->
+  <div class="view" id="vscript">
+    <div class="scriptwrap">
+      <aside class="side col">
+        <div class="sidehead"><span>分场大纲</span><span class="grow"></span></div>
+        <div class="scenelist" id="sceneList"></div>
+        <div class="sidefoot" id="scriptStat"></div>
+      </aside>
+      <main class="scriptmain">
+        <div class="shead">
+          <div class="h">剧本正文</div>
+          <span class="tag">结构化</span>
+          <div class="grow"></div>
+          <span class="statechip" id="scriptCheck">未确认</span>
+        </div>
+        <textarea id="scriptBody" spellcheck="false"></textarea>
+        <div class="sfoot">
+          <span class="hint" id="scriptHint">改完点「重新确认」：会校验 5/8/10/15 时长档位并重建下游</span>
+          <div class="grow"></div>
+          <button class="btn ghost" onclick="saveDraft()">保存草稿</button>
+          <button class="btn ghost" onclick="confirmScript()">重新确认剧本</button>
+          <button class="btn primary" onclick="nextFromScript()">下一步：导入设定 →</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ 设定 ============ -->
+  <div class="view" id="vcast">
+    <div class="bar">
+      <span class="chip">角色 <b id="ccN">0</b></span>
+      <span class="chip">场景 <b id="csN">0</b></span>
+      <span class="chip">道具 <b id="cpN">0</b></span>
+      <div class="grow"></div>
+      <div class="seg" id="castSeg">
+        <button data-f="all" class="on">全部</button>
+        <button data-f="char">角色</button>
+        <button data-f="set">场景</button>
+        <button data-f="prop">道具</button>
+      </div>
+    </div>
+    <div class="styleline">
+      <span class="dotc"></span><span>风格：</span>
+      <select class="sel" id="styleSel" onchange="setStyle(this.value)"
+        style="font-size:12px;padding:4px 24px 4px 8px;max-width:220px"></select>
+      <span style="color:var(--dim)">· 会写进设定与分镜的提示词；改风格后新抽的图才生效</span>
+      <span id="outpath" style="margin-left:auto;color:var(--dim);font-size:10.5px"></span>
+    </div>
+    <div class="castwrap"><div class="castgrid" id="castGrid"></div></div>
+    <div class="sfoot" style="margin:0;padding:11px 18px;border-top:1px solid var(--line)">
+      <span class="hint" id="castHint">下一步会把设定里的角色 / 场景 / 道具按镜头引用一一对应导入分镜</span>
+      <div class="grow"></div>
+      <button class="btn primary" onclick="nextFromCast()">下一步：导入分镜 →</button>
+    </div>
+  </div>
+
+  <!-- ============ 资产库 ============ -->
+  <div class="view" id="vlibrary">
+    <div class="bar">
+      <span class="chip">图片 <b id="libN">0</b></span>
+      <span class="chip">已入项目 <b id="libIn">0</b></span>
+      <span class="stat" id="libHint">按类型分区浏览；点图可把现有资产 / 镜头的图替换掉</span>
+      <div class="grow"></div>
+      <div class="seg" id="libSeg">
+        <button data-f="all" class="on">全部</button>
+        <button data-f="char">角色</button>
+        <button data-f="set">场景</button>
+        <button data-f="prop">道具</button>
+        <button data-f="shot">分镜图</button>
+        <button data-f="video">视频</button>
+        <button data-f="archive">旧图</button>
+      </div>
+      <button class="btn ghost sm" onclick="loadLibrary()">刷新</button>
+    </div>
+    <div class="libwrap"><div class="libinner" id="libGrid"></div></div>
+  </div>
+
+  <!-- ============ 分镜 ============ -->
+  <div class="view" id="vshots">
+    <div class="bar">
+      <select class="sel" id="sceneFilter" style="font-size:12px;padding:5px 26px 5px 9px" onchange="setSceneFilter(this.value)">
+        <option value="">全部场次</option>
+      </select>
+      <span class="chip">角色 <b id="cn">0</b></span>
+      <span class="chip">镜头 <b id="sn">0</b></span>
+      <span class="stat" id="stat"></span>
+      <div class="grow"></div>
+      <button class="btn ghost sm" onclick="goto('script')">返回剧本</button>
+      <button class="btn ghost sm" onclick="newShot()">＋ 新建镜头</button>
+      <button class="btn ghost sm" onclick="healthCheck()">分镜体检</button>
+    </div>
+    <div class="cols">
+      <aside class="side col2">
+        <div class="sidehead">分镜列表<span class="grow"></span><span id="shotCount"></span></div>
+        <div class="scenelist" id="list"></div>
+        <div style="padding:10px;border-top:1px solid var(--line)">
+          <button class="btn primary sm" style="width:100%" onclick="nextFromShots()">下一步：导入短片 →</button>
+        </div>
+      </aside>
+
+      <main class="mid">
+        <div class="shothead">
+          <div class="shotno" id="midNo">镜头 1-1</div>
+          <span class="tag" id="midScene">场次 1</span>
+          <span class="tag" id="midDur">15 秒</span>
+          <div class="grow"></div>
+          <button class="btn ghost sm" onclick="delShot()">删除本镜头</button>
+        </div>
+
+        <details class="fold" open>
+          <summary>关联资产</summary>
+          <div class="assoc">
+            <div class="arow"><b>角色</b><div class="chips" id="chips"></div></div>
+            <div class="arow"><b>场景</b><div class="chips" id="setchips"></div></div>
+            <div class="arow"><b>道具</b><div class="chips" id="propchips"></div></div>
+          </div>
+        </details>
+
+        <div class="fieldlbl">镜头 <span class="link" onclick="pasteBlock()">整段粘贴</span></div>
+        <textarea class="lineinput dline" id="cam" rows="2" spellcheck="false"
+          placeholder="景别、视角、机位、焦段、景深、速度、稳定器"></textarea>
+
+        <div class="fieldlbl">画面</div>
+        <textarea id="desc" placeholder="主体外观、动作、朝向、视线落点、光线与环境，可写 @资产 引用"></textarea>
+        <div class="hintbar">
+          <span>支持 @资产 引用：@矮人酒保 @酒馆大堂</span>
+          <span id="cc">0 字</span>
+        </div>
+
+        <details class="fold" open>
+          <summary>表演 / 台词 / 声音 / 落幅</summary>
+          <div class="fieldlbl">表演</div>
+          <textarea class="lineinput dline" id="perf" rows="2" placeholder="微动作与情绪动机"></textarea>
+          <div class="fieldlbl">台词</div>
+          <textarea class="lineinput dline" id="dial" rows="3" spellcheck="false"
+            placeholder="@角色（语气·语速）说：「台词」；旁白（语气）叙述：「台词」，每行一条"></textarea>
+          <div class="dialtime" id="dialTime"></div>
+          <div class="fieldlbl">声音</div>
+          <textarea class="lineinput dline" id="sound" rows="2" placeholder="环境音与动作音效，如雨声、擦杯声"></textarea>
+          <div class="fieldlbl">落幅</div>
+          <textarea class="lineinput dline" id="endf" rows="2" placeholder="镜头结尾各主体的位置与朝向"></textarea>
+        </details>
+
+        <div class="fieldlbl">时长</div>
+        <div class="durs" id="durs"></div>
+
+        <div class="fieldlbl">画幅与像素</div>
+        <div class="durs" id="vrseg"></div>
+        <div class="durs" id="vszseg"></div>
+
+        <div class="fieldlbl">衔接</div>
+        <div class="durs" id="links"></div>
+
+        <div class="genrow">
+          <div class="meta">
+            模型：<span id="modelName">自动</span><br>
+            比例：<span id="ratioLabel">9:16</span> · 预计 <span id="est">约 16 秒</span>
+          </div>
+          <div class="grow"></div>
+          <button class="btn ghost" onclick="openLibPick('shot','', '', false)">换图</button>
+          <button class="btn ghost" onclick="openLibPick('shot','', '', true)">换视频</button>
+          <button class="btn primary" id="vidbtn" onclick="genVideo()">生成镜头视频</button>
+          <button class="btn ghost" id="autoBtn" onclick="autoFilm()">一键成片</button>
+        </div>
+
+        <div class="cands" id="cands"></div>
+        <div class="cands" id="vcands"></div>
+
+        <div class="progress" id="prog">
+          <div class="ptrack"><div class="pfill" id="pfill"></div></div>
+          <div class="ptext"><span id="pstage">准备中</span><span id="ppct">0%</span></div>
+        </div>
+        <button class="btn ghost sm" id="cancelGen" style="display:none;margin-top:8px" onclick="askCancelGen()">取消生成</button>
+
+        <div class="log" id="log"></div>
+      </main>
+
+      <aside class="right">
+        <div class="rhead"><span>预览</span><span class="grow"></span><span id="rstate">空</span></div>
+        <div class="stage">
+          <div class="frame" id="frame">
+            <div class="em"><b>还没有画面</b>先在设定页给关联资产选定图片</div>
+          </div>
+        </div>
+        <div class="rfoot" id="rfoot">镜头画面直接使用关联资产的参考图，并以此图作为首帧生成视频。</div>
+      </aside>
+    </div>
+
+  </div>
+
+  <!-- ============ 短片 ============ -->
+  <div class="view" id="vfilm">
+    <div class="filmmain">
+      <div class="player" id="player">
+        <div class="em"><b>成片预览</b>至少需要一个已生成的镜头视频</div>
+      </div>
+      <div class="controls">
+        <span class="clock" id="cnow">0:00</span>
+        <span class="clock" id="ctotal">/ 0:00</span>
+        <div class="grow"></div>
+        <button class="ctrl">⏮</button>
+        <button class="ctrl big" onclick="playFilm()">▶</button>
+        <button class="ctrl">⏭</button>
+        <div class="grow"></div>
+        <button class="ctrl" onclick="toast('原型阶段：音量未接入')">🔊</button>
+        <button class="ctrl" onclick="toast('原型阶段：全屏未接入')">⛶</button>
+      </div>
+    </div>
+    <div class="filmbar">
+      <span class="tag" id="filmStat">0 / 10 已完成</span>
+      <div class="grow"></div>
+      <button class="btn ghost sm" onclick="toast('原型阶段：剪辑未接入')">剪辑</button>
+      <button class="btn ghost sm" onclick="exportLines()">导出台词</button>
+      <button class="btn ghost sm" onclick="saveFilm()">保存至成片</button>
+      <button class="btn primary" onclick="exportFilm()">拼接导出</button>
+    </div>
+    <div class="ruler" id="fruler"></div>
+    <div class="tl">
+      <div class="tlhead"><span>成片时间轴</span><span class="grow"></span><span id="dstamp"></span></div>
+      <div class="tlbody" id="ftl"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="mo">
+      <div class="mohead"><span id="moTitle">新建</span><div class="grow"></div>
+        <span class="link" onclick="closeModal()">✕</span></div>
+      <div class="mobody" id="moBody"></div>
+      <div class="mofoot">
+        <button class="btn ghost sm" onclick="closeModal()">取消</button>
+        <button class="btn primary sm" id="moOk">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ================= 数据 ================= */
+const DUR_OK = [5, 8, 10, 15];
+const LINKS = [
+  { id: 'cut', label: '硬切', tip: '独立构图，不与上一镜衔接（换场景 / 时间跳跃 / 转场用）' },
+  { id: 'continue', label: '续接上一镜', tip: '自动抽取上一镜最后一帧作为参考图，站位 / 服装 / 光线延续' }
+];
+const EST = { 5: '约 5 分钟', 8: '约 7 分钟', 10: '约 10 分钟', 15: '约 7 分钟（低像素）' };
+
+/* 视频画幅与像素档：h = 16:9，v = 9:16；est 为实测秒数 */
+const VRATIOS = [{ id: '16:9', label: '16:9 横版' }, { id: '9:16', label: '9:16 竖版' }];
+const VSIZES = [
+  { id: 'low',  label: '低 · 0.33MP', h: { w: 768,  h: 432 }, v: { w: 432, h: 768 },  est: { 5: 130, 8: 200, 10: 270, 15: 300 }, sec15: true },
+  { id: 'mid',  label: '中 · 0.52MP', h: { w: 960,  h: 544 }, v: { w: 544, h: 960 },  est: { 5: 160, 8: 270, 10: 360, 15: 413 }, sec15: true },
+  { id: 'high', label: '高 · 1.0MP',  h: { w: 1344, h: 768 }, v: { w: 768, h: 1344 }, est: { 5: 287, 8: 450, 10: 588, 15: 0 },   sec15: false }
+];
+
+/* 画风预设：写进设定与分镜的提示词前缀 */
+const STYLES = [
+  { name: '未设置（默认 Q 版）', v: '' },
+  { name: 'Q版萌系 · 游戏概念',  v: 'Q版萌系，游戏概念艺术，暖色电影光' },
+  { name: '日式二次元 · 赛璐璐', v: '日式动漫赛璐璐，二次元插画，干净线稿，鲜明配色' },
+  { name: '国风古风 · 水墨工笔', v: '国风古风，水墨与工笔结合，东方配色，留白意境' },
+  { name: '美式卡通 · 2D',      v: '美式卡通 2D 动画，粗描边，饱和色块，造型夸张幽默' },
+  { name: '3D 皮克斯 · 圆润',   v: '3D 皮克斯动画风格，圆润造型，柔和全局光照，细腻材质' },
+  { name: '3D 写实 · 电影渲染', v: '3D 写实渲染，PBR 材质，电影级布光，高细节' },
+  { name: '2D 扁平 · 矢量插画', v: '2D 扁平矢量插画，简洁几何造型，柔和渐变' },
+  { name: '赛博朋克 · 霓虹',    v: '赛博朋克，霓虹灯光，高对比冷色调，未来都市' },
+  { name: '写实电影感 · 胶片',  v: '写实电影感，自然光，浅景深，胶片颗粒' },
+  { name: '水彩手绘',           v: '水彩手绘，纸张纹理，透明叠色，柔边晕染' },
+  { name: '像素复古 · 16bit',   v: '像素艺术，16-bit 复古游戏美术，有限色板' }
+];
+
+let P = null;
+let pid = null;
+let projectList = [];
+
+/* ================= 状态 ================= */
+let cur = 0;
+let filmCur = 0;
+let view = 'home';
+let busy = false;
+let autoRun = false;   // 一键成片进行中：逐条串行，禁止再并行提交
+let autoStop = false;  // 用户在中途点了取消，下一轮循环前退出
+let curJobId = null;
+let castFilter = 'all';
+let sceneFilter = '';
+let libFilter = 'all';
+let libFiles = [];
+let libShown = [];
+let libLoadedFor = '';
+const Q = { mode: 't2i', sec: 5, hasImg: false, busy: false, state: 'empty',
+            imgName: '', imgUrl: '', imgData: '', result: null };
+const QMODES = [
+  { id: 't2i', label: '文生图',   model: 'Qwen-Image 2.1 Turbo' },
+  { id: 't2v', label: '文生视频', model: 'OmniRef · 含音频轨' },
+  { id: 'i2v', label: '图生视频', model: 'OmniRef · 含音频轨' }
+];
+
+const $ = id => document.getElementById(id);
+const hue = i => (i * 47 + 18) % 360;
+const fmt = s => Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+const fmtCn = s => s >= 60 ? (Math.floor(s/60) + ' 分 ' + (s%60 ? (s%60) + ' 秒' : '')) : s + ' 秒';
+const shotByNo = no => P.shots.find(s => s.no === no);
+const charById = id => P.chars.find(c => c.id === id);
+const propById = id => P.props.find(p => p.id === id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ================= 项目：列表 / 读取 / 保存 ================= */
+let offline = false;
+
+function when(ts){
+  if (!ts) return '';
+  const d = new Date(ts * 1000), n = new Date();
+  const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  return d.toDateString() === n.toDateString()
+    ? '今天 ' + hm : (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
+}
+
+async function refreshHome(){
+  try {
+    const r = await fetch('/api/projects');
+    if (!r.ok) throw new Error('bad status');
+    const d = await r.json();
+    projectList = d.projects || [];
+    offline = false;
+  } catch (e) {
+    projectList = [];
+    offline = true;
+  }
+  renderHome();
+}
+
+function renderHome(){
+  if (offline){
+    $('hrows').innerHTML = '<div class="hrow" style="cursor:default;color:var(--bad)">' +
+      '连不上本地服务 · 请先运行 start_studio.bat，再刷新本页</div>';
+    return;
+  }
+  if (!projectList.length){
+    $('hrows').innerHTML = '<div class="hrow" style="cursor:default;color:var(--dim)">' +
+      '还没有项目，点上方「全案编剧」或「＋ 新建项目」开始</div>';
+    return;
+  }
+  $('hrows').innerHTML = projectList.map(it =>
+    '<div class="hrow" style="margin-bottom:8px;cursor:pointer" onclick="openProject(\'' + it.id + '\')">' +
+      '<b style="font-weight:500">' + esc(it.title) + ' · 第 ' + it.episode + ' 集</b>' +
+      '<span>' + it.shots + ' 个镜头 · ' + it.done + ' 个已完成 · ' + when(it.updated) + '</span>' +
+      '<button class="delp" title="删除项目" onclick="event.stopPropagation();delProject(\'' + it.id + '\')">✕</button>' +
+    '</div>').join('');
+}
+
+function delProject(id){
+  const it = projectList.find(x => x.id === id);
+  const name = it ? it.title : id;
+  openModal('删除项目',
+    '<p style="font-size:12.5px;color:var(--txt);line-height:1.8">确定删除「' + esc(name) + '」？<br>' +
+    '<span style="color:var(--dim);font-size:11.5px">项目文件与分镜数据会一起删除，不能恢复。</span></p>',
+    async () => {
+      try {
+        const r = await fetch('/api/project?id=' + encodeURIComponent(id), { method: 'DELETE' });
+        if (!r.ok) throw new Error('删除失败');
+        await refreshHome();
+        toast('已删除「' + name + '」');
+        return true;
+      } catch (e) {
+        toast(e.message);
+        return false;
+      }
+    });
+}
+
+function newProject(){
+  openModal('新建全案项目',
+    '<label class="mlbl">项目名</label>' +
+    '<input class="minput" id="npName" placeholder="例如：暴雨城酒吧奇案">' +
+    '<label class="mlbl">集数</label>' +
+    '<input class="minput" id="npEp" value="1">',
+    () => {
+      const title = $('npName').value.trim();
+      if (!title){ toast('先填一个项目名'); return false; }
+      const ep = Math.max(1, parseInt($('npEp').value, 10) || 1);
+      createProject(title, ep);
+      return true;
+    });
+  setTimeout(() => { const n = $('npName'); if (n) n.focus(); }, 40);
+}
+
+async function createProject(title, episode){
+  try {
+    const r = await fetch('/api/project', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, episode: episode })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || '创建失败');
+    await openProject(d.id);
+    toast('项目「' + title + '」已创建，先写剧本或直接新建镜头');
+  } catch (e) {
+    toast('创建失败：' + e.message);
+  }
+}
+
+async function openProject(id, targetView){
+  try {
+    const r = await fetch('/api/project?id=' + encodeURIComponent(id));
+    if (!r.ok) throw new Error('打不开');
+    loadProject(await r.json());
+    goto(targetView || 'script');
+    return true;
+  } catch (e) {
+    toast('项目加载失败，检查本地服务是否在跑');
+    return false;
+  }
+}
+
+function loadProject(d){
+  P = d;
+  pid = d.id;
+  P.rev = +d.rev || 0;
+  ['chars', 'sets', 'props', 'scenes', 'shots'].forEach(k => { if (!Array.isArray(P[k])) P[k] = []; });
+  P.shots.forEach(s => {
+    ['chars', 'props', 'sets'].forEach(k => { if (!Array.isArray(s[k])) s[k] = []; });
+    // 状态以实际产物为准，避免旧数据把没有文件的镜头标成已完成
+    s.state = (s.video && s.video.filename) ? 'video'
+            : (s.image && s.image.filename) ? 'image' : 'empty';
+  });
+  cur = 0;
+  libFiles = []; libShown = []; libLoadedFor = '';
+  if (migrateAssetDescs()) markSaved();
+  $('scriptBody').value = (typeof P.draft === 'string' && P.draft) ? P.draft : scriptText();
+  $('savetxt').textContent = '已保存';
+  renderAll(true);
+  checkScript();
+}
+
+let saveTimer = null, saveInFlight = false, saveAgain = false;
+
+function markSaved(){
+  if (!P || !pid) return;
+  $('savetxt').textContent = '保存中…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, 500);
+}
+
+async function persist(){
+  if (!P || !pid) return;
+  if (saveInFlight){ saveAgain = true; return; }
+  saveInFlight = true;
+  try {
+    const r = await fetch('/api/project', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(P)
+    });
+    const d = await r.json();
+    if (r.status === 409){
+      $('savetxt').textContent = '已被其他页面更新';
+      toast('这个项目被其他页面改过，正在重新载入最新数据');
+      // 记住当前镜头与刚产出的成片，重载后还原，否则会跳回 1-1 且成片丢失
+      const keepNo = (P && P.shots[cur]) ? P.shots[cur].no : null;
+      const keepVid = (P && P.shots[cur])
+        ? { video: P.shots[cur].video, vcands: P.shots[cur].vcands } : null;
+      const ok = await openProject(pid, view === 'home' ? 'shots' : view);
+      if (ok && keepNo){
+        const idx = P.shots.findIndex(x => x.no === keepNo);
+        if (idx >= 0){
+          cur = idx;
+          if (keepVid && (keepVid.video || (keepVid.vcands || []).length)){
+            const s = P.shots[idx];
+            s.video = keepVid.video;
+            s.vcands = keepVid.vcands || [];
+            if (s.video && s.video.filename) s.state = 'video';
+            markSaved();
+          }
+          renderAll(true);
+        }
+      }
+      return;
+    }
+    if (!r.ok) throw new Error(d.error || '保存失败');
+    P.updated = d.updated;
+    P.rev = d.rev;
+    $('savetxt').textContent = '已保存';
+  } catch (e) {
+    $('savetxt').textContent = '保存失败';
+  } finally {
+    saveInFlight = false;
+    if (saveAgain){ saveAgain = false; persist(); }
+  }
+}
+
+/* ================= 剧本：序列化 / 解析 ================= */
+function scriptText(){
+  const total = P.shots.reduce((a,s)=>a+s.duration,0);
+  const out = [
+    '# ' + P.title + ' · 第 ' + P.episode + ' 集',
+    '',
+    '时长: ' + fmtCn(total),
+    '画幅: ' + P.meta.ratio,
+    '场景: ' + P.meta.scene,
+    '视角: ' + P.meta.pov,
+    '画风: ' + P.style,
+    '',
+    '## 角色'
+  ];
+  P.chars.forEach(c => out.push(c.name + ' | ' + c.role + ' | ' + c.voice));
+  P.scenes.forEach(sc => {
+    out.push('', '## 场次 ' + sc.no + ' ' + sc.name);
+    P.shots.filter(s => s.scene === sc.no).forEach((s, i) => {
+      if (i) out.push('---');
+      out.push('镜头 ' + s.no + ' | ' + s.duration + '秒');
+      if (s.chars.length) out.push('角色: ' + s.chars.map(id => charById(id)?.name).filter(Boolean).join('、'));
+      if (s.props.length) out.push('道具: ' + s.props.map(id => propById(id)?.name).filter(Boolean).join('、'));
+      if (s.camera) out.push('镜头: ' + s.camera);
+      out.push('画面: ' + s.visual);
+      if (s.performance) out.push('表演: ' + s.performance);
+      if (s.dialogue) String(s.dialogue).split('\n').forEach(l => { if (l.trim()) out.push('台词: ' + l.trim()); });
+      if (s.sound) out.push('声音: ' + s.sound);
+      if (s.endFrame) out.push('落幅: ' + s.endFrame);
+    });
+  });
+  return out.join('\n');
+}
+
+function parseScript(text){
+  const errs = [];
+  const meta = {}, chars = [], scenes = [];
+  let mode = '', scene = null, shot = null;
+
+  text.split(/\r?\n/).forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+    if (line.startsWith('## 角色')) { mode = 'chars'; scene = null; shot = null; return; }
+
+    const sm = line.match(/^##\s*场次\s*(\d+)\s*(.*)$/);
+    if (sm) { scene = { no: +sm[1], name: sm[2] || ('场次 ' + sm[1]), shots: [] }; scenes.push(scene); mode = 'scenes'; shot = null; return; }
+    if (line === '---') { shot = null; return; }
+
+    const im = line.match(/^镜头\s*([0-9]+-[0-9]+)\s*[|｜]\s*(\d+)\s*秒?/);
+    if (im) {
+      if (!scene) { errs.push('镜头 ' + im[1] + ' 不属于任何场次'); return; }
+      shot = { no: im[1], duration: +im[2], chars: [], props: [], camera: '', visual: '',
+               performance: '', dialogue: '', sound: '', endFrame: '' };
+      if (DUR_OK.indexOf(shot.duration) < 0) errs.push('镜头 ' + im[1] + ' 的 ' + shot.duration + ' 秒不在 5/8/10/15 档位');
+      scene.shots.push(shot);
+      return;
+    }
+
+    if (mode === 'chars') {
+      const p = line.split(/[|｜]/).map(s => s.trim()).filter(Boolean);
+      if (p.length >= 2) chars.push({ name: p[0], role: p[1], voice: p[2] || '对白' });
+      else errs.push('角色行格式应为：名字 | 主/配角 | 旁白/对白');
+      return;
+    }
+
+    const kv = line.match(/^(镜头|画面|表演|台词|声音|落幅|角色|道具)\s*[:：]\s*(.*)$/);
+    if (kv && shot) {
+      const k = kv[1], v = kv[2].trim();
+      if (k === '镜头') shot.camera = v;
+      else if (k === '画面') shot.visual = v;
+      else if (k === '表演') shot.performance = v;
+      else if (k === '台词') shot.dialogue = shot.dialogue ? shot.dialogue + '\n' + v : v;
+      else if (k === '声音') shot.sound = v;
+      else if (k === '落幅') shot.endFrame = v;
+      else if (k === '角色') shot.charNames = v.split(/[、,，]/).map(s=>s.trim()).filter(Boolean);
+      else if (k === '道具') shot.propNames = v.split(/[、,，]/).map(s=>s.trim()).filter(Boolean);
+      return;
+    }
+    const mk = line.match(/^(时长|画幅|场景|视角|画风)\s*[:：]\s*(.*)$/);
+    if (mk) meta[mk[1]] = mk[2].trim();
+  });
+
+  if (!scenes.length) errs.push('没有识别到任何「## 场次」');
+  scenes.forEach(sc => { if (!sc.shots.length) errs.push('场次 ' + sc.no + ' 下面没有镜头'); });
+  const seen = {};
+  scenes.forEach(sc => sc.shots.forEach(s => { if (seen[s.no]) errs.push('镜头编号 ' + s.no + ' 重复'); seen[s.no] = 1; }));
+  scenes.forEach(sc => sc.shots.forEach(s => { if (!s.visual) errs.push('镜头 ' + s.no + ' 缺少「画面」'); }));
+  return { meta, chars, scenes, errs };
+}
+
+function applyScript(parsed){
+  let seq = P.chars.length;
+  parsed.chars.forEach(c => {
+    const old = P.chars.find(x => x.name === c.name);
+    if (old) { old.role = c.role; old.voice = c.voice; c.id = old.id; }
+    else { c.id = 'c' + (++seq); P.chars.push({ id: c.id, name: c.name, role: c.role, voice: c.voice, locked: false }); }
+  });
+
+  let pseq = P.props.length;
+  const propNames = [];
+  parsed.scenes.forEach(sc => sc.shots.forEach(s => (s.propNames || []).forEach(n => {
+    if (propNames.indexOf(n) < 0) propNames.push(n);
+  })));
+  propNames.forEach(n => {
+    const old = P.props.find(p => p.name === n);
+    if (old) return;
+    P.props.push({ id: 'p' + (++pseq), name: n, locked: false });
+  });
+
+  const oldShots = {};
+  P.shots.forEach(s => oldShots[s.no] = s);
+
+  const newShots = [];
+  parsed.scenes.forEach(sc => sc.shots.forEach(s => {
+    const o = oldShots[s.no];
+    const ids = (s.charNames || []).map(n => {
+      const c = parsed.chars.find(x => x.name === n);
+      return c ? c.id : null;
+    }).filter(Boolean);
+    const pids = (s.propNames || []).map(n => {
+      const p = P.props.find(x => x.name === n);
+      return p ? p.id : null;
+    }).filter(Boolean);
+    // 保留旧镜头已有的分镜图 / 视频 / 候选，避免重新导入剧本时把已生成的产物清空
+    newShots.push(Object.assign({}, o || {}, {
+      no: s.no, scene: sc.no, duration: s.duration,
+      state: (o && o.video && o.video.filename) ? 'video'
+           : (o && o.image && o.image.filename) ? 'image' : 'empty',
+      chars: ids, props: pids,
+      sets: o && o.sets ? o.sets : (P.sets.length ? [P.sets[0].id] : []),
+      visual: s.visual,
+      performance: s.performance || '',
+      dialogue: s.dialogue || ''
+    }));
+  }));
+
+  P.shots = newShots;
+  let t = 0;
+  P.scenes = parsed.scenes.map(sc => {
+    const from = t;
+    t += sc.shots.reduce((a,s)=>a+s.duration,0);
+    return { no: sc.no, name: sc.name, from: from, to: t };
+  });
+  if (parsed.meta['画幅']) P.meta.ratio = parsed.meta['画幅'];
+  if (parsed.meta['场景']) P.meta.scene = parsed.meta['场景'];
+  if (parsed.meta['视角']) P.meta.pov = parsed.meta['视角'];
+  if (parsed.meta['画风']) P.style = parsed.meta['画风'];
+  cur = 0;
+}
+
+/* ================= 渲染：剧本页 ================= */
+function renderScenes(){
+  $('sceneList').innerHTML = P.scenes.map((sc, i) => {
+    const cnt = P.shots.filter(s => s.scene === sc.no).length;
+    return '<div class="sitem" onclick="jumpScene(' + sc.no + ')">' +
+      '<div class="sn">场次 ' + sc.no + ' · ' + sc.name + '</div>' +
+      '<div class="sd"><span>' + fmt(sc.from) + '-' + fmt(sc.to) + '</span><span>' + cnt + ' 个镜头</span></div></div>';
+  }).join('');
+
+  const total = P.shots.reduce((a,s)=>a+s.duration,0);
+  const len = $('scriptBody').value.length;
+  $('scriptStat').innerHTML = P.scenes.length + ' 个场次 · ' + P.shots.length + ' 个镜头<br>' +
+    '总时长 ' + fmt(total) + ' · 约 ' + len + ' 字';
+}
+
+function jumpScene(no){
+  const ta = $('scriptBody');
+  const idx = ta.value.indexOf('## 场次 ' + no + ' ');
+  if (idx < 0) return;
+  ta.focus();
+  ta.setSelectionRange(idx, idx);
+  ta.scrollTop = Math.max(0, ta.value.slice(0, idx).split('\n').length * 26 - 60);
+}
+
+function checkScript(){
+  const r = parseScript($('scriptBody').value);
+  const chip = $('scriptCheck');
+  const btn = $('scriptHint');
+  if (r.errs.length){
+    chip.className = 'statechip bad';
+    chip.textContent = '⚠ ' + r.errs.length + ' 处问题';
+    btn.textContent = r.errs[0];
+    btn.style.color = 'var(--bad)';
+  } else {
+    chip.className = 'statechip';
+    chip.textContent = '✓ 校验通过';
+    btn.textContent = '共 ' + r.scenes.reduce((a,s)=>a+s.shots.length,0) + ' 个镜头 · 时长档位合规';
+    btn.style.color = '';
+  }
+  return r;
+}
+
+function confirmScript(){
+  const r = checkScript();
+  if (r.errs.length){ toast(r.errs[0]); return; }
+
+  const before = P.shots.length;
+  applyScript(r);
+  $('scriptBody').value = scriptText();
+  P.draft = $('scriptBody').value;
+  markSaved();
+  renderScenes();
+  renderAll(true);
+  checkScript();
+  toast('剧本已确认 · ' + P.scenes.length + ' 场次 / ' + P.shots.length + ' 镜头 · 下游已重建');
+
+  const missing = P.chars.filter(c => !c.locked && P.shots.some(s => s.chars.indexOf(c.id) >= 0));
+  if (missing.length) {
+    setTimeout(() => toast('提示：' + missing.length + ' 个角色还没锁定参考图，去「设定」补齐'), 2100);
+  }
+}
+
+/* ================= 环节流转：下一步（先确认，再导入） ================= */
+function assetListOf(kind){
+  return kind === 'char' ? P.chars : kind === 'set' ? P.sets : P.props;
+}
+
+function kindLabel(kind){
+  return kind === 'char' ? '角色' : kind === 'set' ? '场景' : '道具';
+}
+
+function chipLine(pairs){
+  return '<div class="libpick">' + pairs.map(p =>
+    '<span class="chip">' + p[0] + ' <b>' + p[1] + '</b></span>').join('') + '</div>';
+}
+
+function nextFromScript(){
+  const r = checkScript();
+  if (r.errs.length){ toast(r.errs[0]); return; }
+  const shotN = r.scenes.reduce((a, s) => a + s.shots.length, 0);
+  const propNames = [];
+  r.scenes.forEach(sc => sc.shots.forEach(s => (s.propNames || []).forEach(n => {
+    if (propNames.indexOf(n) < 0) propNames.push(n);
+  })));
+  openModal('确认导入「设定」？',
+    '<p style="margin:0 0 4px">按镜头编号一一对应，把剧本导入设定环节：</p>' +
+    chipLine([['场次', r.scenes.length], ['镜头', shotN], ['角色', r.chars.length], ['道具', propNames.length]]) +
+    '<p style="margin:6px 0 0;color:var(--dim);font-size:11.5px">' +
+    '同名角色会保留已有参考图；分镜数据按新剧本重建，已生成的图保留在候选里。</p>',
+    () => {
+      applyScript(r);
+      $('scriptBody').value = scriptText();
+      P.draft = $('scriptBody').value;
+      markSaved();
+      renderScenes();
+      renderAll(true);
+      checkScript();
+      goto('cast');
+      toast('已导入设定 · ' + r.scenes.length + ' 场次 / ' + shotN + ' 镜头');
+    });
+}
+
+function nextFromCast(){
+  if (!P.shots.length){ toast('还没有分镜，先在剧本页导入'); return; }
+  const used = { char: {}, set: {}, prop: {} };
+  P.shots.forEach(s => {
+    used.char = used.char || {};
+    (s.chars || []).forEach(id => { used.char[id] = (used.char[id] || 0) + 1; });
+    (s.sets || []).forEach(id => { used.set[id] = (used.set[id] || 0) + 1; });
+    (s.props || []).forEach(id => { used.prop[id] = (used.prop[id] || 0) + 1; });
+  });
+
+  const pair = [], missing = [];
+  let stale = 0, refTotal = 0;
+  ['char', 'set', 'prop'].forEach(k => {
+    const list = assetListOf(k);
+    const picked = list.filter(it => it.image).length;
+    pair.push([kindLabel(k), list.length + ' 个 · 已选图 ' + picked]);
+    Object.keys(used[k] || {}).forEach(id => {
+      refTotal += used[k][id];
+      const it = list.find(x => x.id === id);
+      if (!it) stale += used[k][id];
+      else if (!it.image) missing.push(kindLabel(k) + '「' + it.name + '」');
+    });
+  });
+
+  let html = '<p style="margin:0 0 4px">把设定里的资产按镜头引用一一对应导入分镜：</p>' +
+    chipLine(pair) +
+    '<p style="margin:4px 0 0;font-size:11.5px;color:var(--dim)">共 ' + P.shots.length +
+    ' 个镜头，引用 ' + refTotal + ' 处资产。</p>';
+  if (missing.length){
+    html += '<p style="margin:6px 0 0;font-size:11.5px;color:#d9b25f">⚠ ' + missing.length +
+      ' 个被引用的资产还没有选定图片：' + missing.slice(0, 5).join('、') +
+      (missing.length > 5 ? ' 等' : '') + '。仍可导入，但分镜只能靠文字描述生成。</p>';
+  }
+  if (stale){
+    html += '<p style="margin:6px 0 0;font-size:11.5px;color:var(--dim)">有 ' + stale +
+      ' 处失效引用，导入时会自动清理。</p>';
+  }
+
+  openModal('确认导入「分镜」？', html, () => {
+    let fixed = 0;
+    P.shots.forEach(s => {
+      [['chars', 'char'], ['sets', 'set'], ['props', 'prop']].forEach(pairK => {
+        const key = pairK[0], k = pairK[1];
+        const arr = s[key] || [];
+        const keep = arr.filter(id => assetListOf(k).some(x => x.id === id));
+        if (keep.length !== arr.length){ s[key] = keep; fixed++; }
+      });
+      if (!(s.sets || []).length && P.sets.length){ s.sets = [P.sets[0].id]; fixed++; }
+    });
+    markSaved();
+    renderAll(true);
+    goto('shots');
+    toast('已导入分镜 · ' + P.shots.length + ' 个镜头' +
+      (fixed ? ' · 清理 ' + fixed + ' 处引用' : ''));
+  });
+}
+
+function nextFromShots(){
+  const done = P.shots.filter(s => s.state === 'video');
+  if (!done.length){ toast('还没有已完成的镜头视频，先在分镜里生成'); return; }
+  const total = done.reduce((a, s) => a + s.duration, 0);
+  const totalAll = P.shots.reduce((a, s) => a + s.duration, 0);
+  openModal('确认导入「短片」？',
+    '<p style="margin:0 0 4px">按镜头顺序把已完成的镜头视频导入短片：</p>' +
+    chipLine([['已完成镜头', done.length + ' / ' + P.shots.length],
+      ['导入时长', fmt(total)], ['全集时长', fmt(totalAll)]]) +
+    (done.length < P.shots.length
+      ? '<p style="margin:6px 0 0;font-size:11.5px;color:#d9b25f">还有 ' +
+        (P.shots.length - done.length) + ' 个镜头没有视频，不会进入成片。</p>'
+      : '<p style="margin:6px 0 0;font-size:11.5px;color:var(--ok)">全部镜头已完成，可导入整集。</p>'),
+    () => {
+      P.film = done.map(s => ({
+        no: s.no, duration: s.duration,
+        filename: s.video.filename, subfolder: s.video.subfolder || ''
+      }));
+      filmCur = 0;
+      markSaved();
+      goto('film');
+      renderFilm();
+      toast('已导入短片 · ' + done.length + ' 个镜头 / ' + fmt(total));
+    });
+}
+
+function saveDraft(){
+  P.draft = $('scriptBody').value;
+  markSaved();
+  toast('草稿已保存');
+}
+
+/* ================= 渲染：设定页 ================= */
+function renderCast(){
+  const items = [];
+  if (castFilter === 'all' || castFilter === 'char')
+    P.chars.forEach((c, i) => items.push({ kind: 'char', it: c, role: c.role, h: hue(i) }));
+  if (castFilter === 'all' || castFilter === 'set')
+    P.sets.forEach((t, i) => items.push({ kind: 'set', it: t, role: '场景', h: hue(i + 3) }));
+  if (castFilter === 'all' || castFilter === 'prop')
+    P.props.forEach((p, i) => items.push({ kind: 'prop', it: p, role: '道具', h: hue(i + 6) }));
+
+  $('castGrid').innerHTML = items.map(x => {
+    const it = x.it;
+    const cands = it.cands || [];
+    const pool = cands.length
+      ? cands.map((f, i) => {
+          const on = it.image && it.image.filename === f.filename;
+          return '<div class="cand' + (on ? ' sel' : '') + '" onclick="assetSelRow(\'' + x.kind + '\',\'' + it.id + '\',' + i + ')">' +
+            '<img src="' + fileUrl(f) + '" alt="">' +
+            '<button class="cred" title="只重抽这一张" onclick="event.stopPropagation();assetRedrawRow(\'' + x.kind + '\',\'' + it.id + '\',' + i + ')">↻</button>' +
+            '<button class="cdel" title="删除这一张" onclick="event.stopPropagation();assetDelRow(\'' + x.kind + '\',\'' + it.id + '\',' + i + ')">✕</button>' +
+          '</div>';
+        }).join('')
+      : '<div class="candempty">还没有候选 · 点右侧「抽 4 张」</div>';
+    const status = it._busy ? '抽卡中…'
+      : (it.locked && it.image) ? '已选定 · 已确认'
+      : (it.image ? '已选定 · 未确认'
+      : (cands.length ? cands.length + ' 张候选 · 未选定' : '待出图'));
+    const open = openAssets.has(x.kind + ':' + it.id);
+    return '<div class="arow2">' +
+      '<div class="ahead" onclick="toggleAssetRow(\'' + x.kind + '\',\'' + it.id + '\')">' +
+        '<div class="athumb">' + (it.image ? '<img src="' + fileUrl(it.image) + '" alt="">' : '<span style="--h:' + x.h + '"></span>') + '</div>' +
+        '<div class="ameta"><b>' + esc(it.name) + '</b>' +
+          '<span class="badge role">' + x.role + '</span>' +
+          '<span class="ast">' + status + '</span></div>' +
+      '</div>' +
+      '<div class="amain"><div class="apool">' + pool + '</div></div>' +
+      '<div class="aacts">' +
+        '<button class="btn primary sm"' + (it._busy ? ' disabled' : '') + ' onclick="assetDrawRow(\'' + x.kind + '\',\'' + it.id + '\')">抽 4 张</button>' +
+        '<button class="btn ghost sm" onclick="openLibPick(\'asset\',\'' + x.kind + '\',\'' + it.id + '\')">换图</button>' +
+        '<span class="astat" id="astat-' + x.kind + '-' + it.id + '"></span>' +
+        '<button class="delcc" title="删除该资产" onclick="removeAsset(\'' + x.kind + '\',\'' + it.id + '\')">✕</button>' +
+      '</div>' +
+      '<div class="aedit" id="aedit-' + x.kind + '-' + it.id + '"' + (open ? '' : ' style="display:none"') + '>' +
+        '<div class="aeditmain">' +
+          '<textarea id="ap-' + x.kind + '-' + it.id + '" placeholder="' + esc(assetExample(x.kind, it)) +
+            '" oninput="assetPreview(\'' + x.kind + '\',\'' + it.id + '\')">' + esc(it.desc || '') + '</textarea>' +
+          '<div class="apreview" id="apv-' + x.kind + '-' + it.id + '">实际发送：' + esc(composeAssetPrompt(x.kind, it)) + '</div>' +
+        '</div>' +
+        '<div class="aeditbtns">' +
+          '<button class="btn ghost sm" onclick="assetSaveRow(\'' + x.kind + '\',\'' + it.id + '\')">保存描述</button>' +
+          '<button class="btn ghost sm" onclick="assetResetPrompt(\'' + x.kind + '\',\'' + it.id + '\')">恢复默认</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('') +
+  '<div class="addcc" onclick="addAsset()">＋ 新增' + (castFilter === 'char' ? '角色' : castFilter === 'set' ? '场景' : castFilter === 'prop' ? '道具' : '资产') + '</div>';
+
+  $('ccN').textContent = P.chars.length;
+  $('csN').textContent = P.sets.length;
+  $('cpN').textContent = P.props.length;
+  if ($('outpath')) $('outpath').textContent = '产物目录：output\\studio\\' + pid + '\\<类型>';
+  renderStyleSel();
+}
+
+function assetPreview(kind, id){
+  const it = assetArr(kind).find(x => x.id === id);
+  const ta = $('ap-' + kind + '-' + id);
+  const el = $('apv-' + kind + '-' + id);
+  if (!it || !ta || !el) return;
+  el.textContent = '实际发送：' + composeAssetPrompt(kind, it, ta.value.trim());
+}
+
+function renderStyleSel(){
+  const sel = $('styleSel');
+  if (!sel || !P) return;
+  const cur = P.style || (P.meta && P.meta.style) || '';
+  sel.innerHTML = STYLES.map(s =>
+    '<option value="' + esc(s.v) + '"' + (s.v === cur ? ' selected' : '') + '>' + s.name + '</option>').join('');
+}
+
+function setStyle(v){
+  if (!P) return;
+  P.style = v;
+  P.meta = P.meta || {};
+  P.meta.style = v;
+  markSaved();
+  renderCast();
+  toast(v ? '画风已切换 · 新抽的设定图会用它' : '已恢复默认画风');
+}
+
+/* ---- 行内抽卡 ---- */
+let openAssets = new Set();
+
+function toggleAssetRow(kind, id){
+  const key = kind + ':' + id;
+  const el = $('aedit-' + kind + '-' + id);
+  if (!el) return;
+  if (openAssets.has(key)){ openAssets.delete(key); el.style.display = 'none'; }
+  else { openAssets.add(key); el.style.display = ''; }
+}
+
+function assetRowStat(kind, id, txt){
+  const el = $('astat-' + kind + '-' + id);
+  if (el) el.textContent = txt || '';
+}
+
+function assetSelRow(kind, id, i){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it || !it.cands || !it.cands[i]) return;
+  it.image = it.cands[i];
+  it.locked = true;
+  markSaved();
+  renderCast();
+  toast(it.name + ' 已选定 · 分镜会引用这张');
+}
+
+function assetDelRow(kind, id, i){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it || !it.cands || !it.cands[i]) return;
+  const del = it.cands.splice(i, 1)[0];
+  if (it.image && del && it.image.filename === del.filename){ it.image = null; it.locked = false; }
+  markSaved();
+  renderCast();
+  toast('已删除 1 张候选');
+}
+
+function assetRedrawRow(kind, id, i){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it) return;
+  if (it._busy) return toast('这个资产正在生成，等它完成再点');
+  if (!it.cands || !it.cands[i]) return;
+  const ta = $('ap-' + kind + '-' + id);
+  const desc = ta ? (ta.value || '').trim() : (it.desc || '');
+  const prompt = composeAssetPrompt(kind, it, desc);
+  confirmGen('确认重抽 · ' + it.name,
+    '只替换这 <b>1 张</b>，其他候选不变，约 15–40 秒。', prompt,
+    () => doRedrawAsset(kind, id, i, desc, prompt));
+}
+
+async function doRedrawAsset(kind, id, i, desc, prompt){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it) return;
+  it.desc = desc;
+  const old = it.cands.splice(i, 1)[0];
+  if (it.image && old && it.image.filename === old.filename){ it.image = null; it.locked = false; }
+  it._busy = true;
+  markSaved();
+  renderCast();
+  assetRowStat(kind, id, '只重抽这 1 张…');
+  const dim = kind === 'char' ? { w: 1024, h: 1024 } : projectSize();
+  try {
+    await ensureComfy();
+    const jid = await submitJob('image', prompt, null, null, dim,
+      { kind: kind, desc: desc, name: it.name, role: it.role || '', style: currentStyle() });
+    const job = await waitJob(jid);
+    const f = pickFile(job.files, 'image');
+    if (!f) throw new Error('没有产物');
+    it.cands.splice(Math.min(i, it.cands.length), 0, { filename: f.filename, subfolder: f.subfolder || '' });
+    assetRowStat(kind, id, '已换新 1 张');
+  } catch (e) {
+    it.cands.splice(Math.min(i, it.cands.length), 0, old);
+    assetRowStat(kind, id, '重抽失败：' + e.message);
+    toast('重抽失败：' + e.message);
+  } finally {
+    it._busy = false;
+    markSaved();
+    renderCast();
+  }
+}
+
+function assetSaveRow(kind, id){
+  const it = assetArr(kind).find(x => x.id === id);
+  const ta = $('ap-' + kind + '-' + id);
+  if (!it || !ta) return;
+  it.desc = (ta.value || '').trim();
+  markSaved();
+  toast('描述已保存；画风与「无人」等约束会自动拼接');
+}
+
+function assetResetPrompt(kind, id){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it) return;
+  it.desc = '';
+  markSaved();
+  renderCast();
+  toast('已清空描述，将按名称 + 当前画风自动拼提示词');
+}
+
+function assetDrawRow(kind, id){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it) return;
+  if (it._busy) return toast('这个资产正在生成，等它完成再点');
+  const ta = $('ap-' + kind + '-' + id);
+  const desc = ta ? (ta.value || '').trim() : (it.desc || '');
+  const prompt = composeAssetPrompt(kind, it, desc);
+  confirmGen('确认抽卡 · ' + it.name,
+    '将按下面的提示词生成 <b>4 张</b>候选图，约 20–60 秒。生成期间按钮会锁定，避免重复排队。', prompt,
+    () => doDrawAssets(kind, id, desc, prompt));
+}
+
+async function doDrawAssets(kind, id, desc, prompt){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it) return;
+  it.desc = desc;
+  it.cands = it.cands || [];
+  it._busy = true;
+  const dim = kind === 'char' ? { w: 1024, h: 1024 } : projectSize();
+  assetRowStat(kind, id, '准备中…');
+  renderCast();
+  try {
+    await ensureComfy();
+    for (let i = 0; i < 4; i++){
+      assetRowStat(kind, id, '抽 ' + (i + 1) + '/4…');
+      const jid = await submitJob('image', prompt, null, null, dim,
+        { kind: kind, desc: desc, name: it.name, role: it.role || '', style: currentStyle() });
+      const job = await waitJob(jid);
+      const f = pickFile(job.files, 'image');
+      if (!f) throw new Error('第 ' + (i + 1) + ' 张没有产物');
+      it.cands.push({ filename: f.filename, subfolder: f.subfolder || '' });
+      markSaved();
+      renderCast();
+    }
+    assetRowStat(kind, id, '4 张完成');
+  } catch (e) {
+    assetRowStat(kind, id, '失败：' + e.message);
+    toast('抽卡失败：' + e.message);
+  } finally {
+    it._busy = false;
+    markSaved();
+    renderCast();
+  }
+}
+
+function confirmGen(title, desc, prompt, run){
+  openModal(title,
+    '<p style="font-size:12.5px;color:var(--txt);line-height:1.8;margin:0 0 4px">' + desc + '</p>' +
+    '<div class="cfprompt">' + esc(prompt) + '</div>',
+    () => { run(); return true; });
+  $('moOk').textContent = '确认生成';
+}
+
+function toggleLock(kind, id){
+  const arr = kind === 'char' ? P.chars : kind === 'set' ? P.sets : P.props;
+  const it = arr.find(x => x.id === id);
+  if (!it) return;
+  it.locked = !it.locked;
+  markSaved();
+  renderCast();
+  if (kind === 'char') {
+    const n = P.shots.filter(s => s.chars.indexOf(id) >= 0).length;
+    toast(it.locked ? ('已锁定 · ' + n + ' 个镜头引用这张参考图') : '已解锁 · 引用它的 ' + n + ' 个镜头需要重跑');
+  }
+}
+
+function reExtract(){
+  $('castSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.f === 'all'));
+  castFilter = 'all';
+  renderCast();
+  toast('已按剧本重新提取资产（原型模拟）');
+}
+
+function batchGen(){
+  const cards = Array.prototype.slice.call(document.querySelectorAll('.cc'));
+  if (!cards.length) return;
+  let n = 0;
+  const tick = () => {
+    if (n >= cards.length){ toast('参考图已批量生成（原型模拟）'); return; }
+    const c = cards[n++];
+    c.classList.add('gen');
+    setTimeout(() => c.classList.remove('gen'), 620);
+    setTimeout(tick, 300);
+  };
+  toast('开始批量生成 ' + cards.length + ' 张参考图…');
+  tick();
+}
+
+/* ================= 设定抽卡 ================= */
+let assetState = null;
+
+function assetArr(kind){ return kind === 'char' ? P.chars : kind === 'set' ? P.sets : P.props; }
+function assetKindName(kind){ return ({ char: '角色', set: '场景', prop: '道具' })[kind]; }
+
+const DEFAULT_STYLE = 'Q版风格，游戏概念艺术，暖色电影光';
+
+function currentStyle(){
+  return (P && (P.style || (P.meta && P.meta.style))) || DEFAULT_STYLE;
+}
+
+function assetExample(kind, it){
+  if (kind === 'char') return '示例：' + it.name + '，' + (it.role || '主角') + '，黑色皮甲，双持匕首';
+  if (kind === 'set') return '示例：' + it.name + '，木质桌椅、壁炉、吊灯，夜晚暖光';
+  return '示例：' + it.name + '，粗麻/木质等材质，做旧污渍，磨损边缘';
+}
+
+/* 只写「主体描述」；画风、类型模板、无人/纯色背景等约束由程序统一拼接 */
+const STYLE_STRIP = ['q版', 'Q版', '萌系', '角色', '人物', '立绘', '头像', '半身', '全身', '设定图', '三视图'];
+
+function adaptStyle(style){
+  return (style || '').split(/[，,、；;]/).map(s => s.trim())
+    .filter(s => s && !STYLE_STRIP.some(t => s.indexOf(t) >= 0)).join('，');
+}
+
+function assetWorld(){
+  return (P && P.meta && P.meta.scene) || '';
+}
+
+function assetCore(kind, it, desc){
+  const d = (desc !== undefined ? desc : (it.desc || '')).trim();
+  if (d) return d;
+  return kind === 'char' ? (it.name + (it.role ? '，' + it.role : '')) : it.name;
+}
+
+function composeAssetPrompt(kind, it, desc){
+  const raw = (desc !== undefined ? desc : (it.desc || '')).trim();
+  const core = assetCore(kind, it, desc);
+  if (kind === 'char'){
+    return currentStyle() + '，角色设定图：' + core +
+      '，全身站姿，正面视图，纯色背景，画面里不要出现任何文字，画面里只有这一个人物';
+  }
+  const st = adaptStyle(currentStyle()) || '游戏概念艺术，暖色电影光';
+  if (kind === 'set'){
+    const world = assetWorld();
+    const scene = (world && core.indexOf(world) < 0) ? world + '，' + core : core;
+    const place = /(街|外景|森林|山|屋顶|广场|码头|田野|海边|庭院|城墙)/.test(core) ? '室外全景' : '室内全景';
+    return st + '，场景概念艺术，环境原画，建筑与室内设计，广角镜头；' + scene +
+      '，空无一人，' + place +
+      '，广角镜头，只有场景建筑与家具，画面中没有任何人物、人影、动物，不要出现任何文字';
+  }
+  const propCore = raw ? core : core + '，奇幻中世纪风格，做旧材质，手工质感';
+  return st + '，道具静物特写，产品摄影，柔和棚拍光；' + propCore +
+    '，单独居中摆在纯色背景上，画面中没有任何人物、人手、身体、角色，不要出现任何文字';
+}
+
+/* 把旧版整段提示词还原成「主体描述」，去掉旧画风和自动约束 */
+function coreFromLegacy(desc){
+  let d = (desc || '').trim();
+  if (!d) return '';
+  const m = d.match(/(?:角色设定图|场景设定图|环境场景概念设定图|空镜无人环境设定图|道具设定图|道具物品设定图)[：:]\s*([\s\S]*)$/);
+  if (m) d = m[1];
+  const tails = [
+    '画面里只有这一个人物', '全身站姿', '正面视图', '纯色背景',
+    '画面里不要出现任何文字', '画面中不要出现任何文字', '不要出现任何文字',
+    '画面中不要出现人物、人影、动物', '画面中不要出现人物、角色、人影、动物',
+    '画面中不要出现人物、人手、身体、角色', '画面中不要出现人物、人手、身体',
+    '无人物', '画面中不要出现人物',
+    '物品单独居中摆在纯色背景上', '物品单独居中展示在纯色背景上',
+    '只有场景建筑与家具本身', '只画空场景与环境建筑本身', '室内空无一人',
+    '产品特写', '特写'
+  ];
+  let changed = true;
+  while (changed){
+    changed = false;
+    for (const t of tails){
+      const re = new RegExp('[，,]\\s*' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$');
+      if (re.test(d)){ d = d.replace(re, ''); changed = true; }
+    }
+  }
+  return d.trim();
+}
+
+/* 载入项目时迁移旧数据：只保留主体描述 */
+function migrateAssetDescs(){
+  let touched = false;
+  [['chars', 'char'], ['sets', 'set'], ['props', 'prop']].forEach(function(pair){
+    const key = pair[0], kind = pair[1];
+    (P[key] || []).forEach(function(it){
+      if (!it.desc) return;
+      if (!/(设定图|概念艺术|风格|渲染|插画|漫画风|全身站姿|正面视图|纯色背景|物品单独居中|画面中不要出现|画面里不要出现)/.test(it.desc)) return;
+      const core = coreFromLegacy(it.desc);
+      if (core && core !== it.desc){ it.desc = core; touched = true; }
+    });
+  });
+  return touched;
+}
+
+function openAsset(kind, id){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it) return;
+  it.cands = it.cands || [];
+  if (it.image && !it.cands.some(f => f.filename === it.image.filename)) it.cands.unshift(it.image);
+  assetState = { kind: kind, id: id, sel: it.image ? 0 : -1, busy: false };
+  openModal(assetKindName(kind) + '设定 · ' + it.name,
+    '<label class="mlbl">提示词（抽卡用这段，可改）</label>' +
+    '<textarea class="minput" id="apPrompt" style="height:78px;padding:8px;line-height:1.5">' +
+      esc(it.desc || '') + '</textarea>' +
+    '<div style="display:flex;gap:8px;align-items:center;margin:10px 0">' +
+      '<button class="btn primary sm" id="apDraw" onclick="assetDraw()">抽 4 张</button>' +
+      '<button class="btn ghost sm" onclick="assetSavePrompt()">保存提示词</button>' +
+      '<span id="apStat" style="font-size:11px;color:var(--dim)"></span>' +
+    '</div>' +
+    '<div id="apPool" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>' +
+    '<p style="font-size:11px;color:var(--dim);margin-top:10px;line-height:1.6">点图选中，再点右下角「用这张」确认。确认后分镜会引用这张图，跨镜头才不变脸。</p>',
+    () => assetUse());
+  $('moOk').textContent = '用这张';
+  assetCands();
+}
+
+function assetCands(){
+  const st = assetState;
+  if (!st) return;
+  const it = assetArr(st.kind).find(x => x.id === st.id);
+  if (!it) return;
+  const list = it.cands || [];
+  if (!list.length){
+    $('apPool').innerHTML = '<div style="grid-column:1/-1;color:var(--dim);font-size:11px;padding:14px 0">还没有候选，点「抽 4 张」</div>';
+    return;
+  }
+  $('apPool').innerHTML = list.map((f, i) =>
+    '<div onclick="assetSel(' + i + ')" title="选第 ' + (i + 1) + ' 张" style="position:relative;padding-top:100%;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid ' +
+      (st.sel === i ? 'var(--acc)' : 'transparent') + '">' +
+      '<img src="' + fileUrl(f) + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">' +
+      '<button onclick="event.stopPropagation();assetDelCand(' + i + ')" title="删除这张候选" ' +
+        'style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:5px;border:none;' +
+        'background:rgba(0,0,0,.62);color:#ddd;cursor:pointer;font-size:10px;line-height:1">✕</button>' +
+    '</div>').join('');
+}
+
+function assetSel(i){
+  if (!assetState) return;
+  assetState.sel = i;
+  assetCands();
+}
+
+function assetDelCand(i){
+  const st = assetState;
+  if (!st) return;
+  const it = assetArr(st.kind).find(x => x.id === st.id);
+  if (!it || !it.cands || !it.cands[i]) return;
+  it.cands.splice(i, 1);
+  if (st.sel >= it.cands.length) st.sel = it.cands.length - 1;
+  markSaved();
+  assetCands();
+  renderCast();
+}
+
+function assetSavePrompt(){
+  const st = assetState;
+  if (!st) return;
+  const it = assetArr(st.kind).find(x => x.id === st.id);
+  if (!it) return;
+  it.desc = ($('apPrompt').value || '').trim();
+  markSaved();
+  toast('提示词已保存');
+}
+
+async function assetDraw(){
+  const st = assetState;
+  if (!st || st.busy) return;
+  const it = assetArr(st.kind).find(x => x.id === st.id);
+  if (!it) return;
+  const prompt = ($('apPrompt').value || '').trim();
+  if (!prompt){ toast('先写提示词'); return; }
+  it.desc = prompt;
+  it.cands = [];
+  st.sel = -1;
+  st.busy = true;
+  $('apDraw').disabled = true;
+  const dim = st.kind === 'char' ? { w: 1024, h: 1024 } : projectSize();
+  try {
+    await ensureComfy();
+    for (let i = 0; i < 4; i++){
+      $('apStat').textContent = '抽第 ' + (i + 1) + '/4 张…';
+      const jid = await submitJob('image', prompt, null, null, dim);
+      const job = await waitJob(jid, j => { $('apStat').textContent = '抽第 ' + (i + 1) + '/4 · ' + (j.stage || ''); });
+      const f = pickFile(job.files, 'image');
+      if (!f) throw new Error('第 ' + (i + 1) + ' 张没有产物');
+      it.cands.push({ filename: f.filename, subfolder: f.subfolder || '' });
+      st.sel = it.cands.length - 1;
+      assetCands();
+      renderCast();
+    }
+    markSaved();
+    $('apStat').textContent = '4 张完成，选一张';
+  } catch (e) {
+    $('apStat').textContent = '失败：' + e.message;
+    toast('抽卡失败：' + e.message);
+  } finally {
+    st.busy = false;
+    const b = $('apDraw');
+    if (b) b.disabled = false;
+  }
+}
+
+function assetUse(){
+  const st = assetState;
+  if (!st) return;
+  const it = assetArr(st.kind).find(x => x.id === st.id);
+  if (!it) return;
+  const list = it.cands || [];
+  if (st.sel < 0 || !list[st.sel]){ toast('先抽一张并选中'); return false; }
+  it.image = list[st.sel];
+  it.locked = true;
+  markSaved();
+  renderCast();
+  toast(it.name + ' 已确认 · 分镜会引用这张');
+  return true;
+}
+
+
+function renderList(){
+  if ($('sceneFilter')){
+    $('sceneFilter').innerHTML = '<option value="">全部场次</option>' +
+      (P.scenes || []).map(x => '<option value="' + x.no + '"' +
+        (String(sceneFilter) === String(x.no) ? ' selected' : '') + '>场次 ' + x.no + ' · ' + esc(x.name) + '</option>').join('');
+  }
+  const shown = P.shots.map((s, i) => ({ s: s, i: i }))
+    .filter(x => !sceneFilter || String(x.s.scene) === String(sceneFilter));
+  $('list').innerHTML = shown.map(({ s, i }) => {
+    const hasVid = !!(s.video && s.video.filename);
+    const hasImg = !!(s.image && s.image.filename);
+    const bd = hasVid ? '<span class="badge vid">成片</span>'
+             : hasImg ? '<span class="badge img">有图</span>'
+             : '<span class="badge">待生成</span>';
+    const thumb = hasVid
+      ? ' style="background-image:url(\'/api/frame?filename=' + encodeURIComponent(s.video.filename) +
+        '&subfolder=' + encodeURIComponent(s.video.subfolder || '') +
+        '&t=0\');background-size:cover;background-position:center"'
+      : hasImg
+      ? ' style="background-image:url(\'' + fileUrl(s.image) + '\');background-size:cover;background-position:center"'
+      : (shotCover(s)
+        ? ' style="background-image:url(\'' + fileUrl(shotCover(s)) + '\');background-size:cover;background-position:center;opacity:.5"'
+        : '');
+    return '<div class="item' + (i === cur ? ' on' : '') + '" onclick="pick(' + i + ')">' +
+      '<div class="thumb" style="--h:' + hue(i) + '"><i' + thumb + '></i></div>' +
+      '<div class="info"><div class="no">镜头 ' + s.no + '</div>' +
+      '<div class="d">' + bd + '<span>' + s.duration + 's</span></div></div></div>';
+  }).join('');
+  $('shotCount').textContent = sceneFilter
+    ? ('共 ' + shown.length + ' / ' + P.shots.length + ' 个')
+    : ('共 ' + P.shots.length + ' 个');
+}
+
+function setSceneFilter(v){
+  sceneFilter = v;
+  renderList();
+}
+
+function renderMid(){
+  const s = P.shots[cur];
+  if (!s) return;
+  $('midNo').textContent = '镜头 ' + s.no;
+  $('midScene').textContent = '场次 ' + s.scene;
+  $('midDur').textContent = s.duration + ' 秒';
+
+  $('chips').innerHTML = P.chars.map(c => {
+    const on = s.chars.indexOf(c.id) >= 0 ? 'cchip on' : 'cchip';
+    return '<button class="' + on + '" onclick="toggleChar(\'' + c.id + '\')">' + c.name +
+      '<span style="opacity:.5;font-size:10px"> · ' + c.role + '</span>' +
+      '<span class="at" title="插入 @" onclick="event.stopPropagation();insertRef(\'char\',\'' + c.id + '\')">@</span></button>';
+  }).join('');
+
+  $('setchips').innerHTML = P.sets.map(t => {
+    const on = s.sets.indexOf(t.id) >= 0 ? 'cchip on' : 'cchip';
+    return '<button class="' + on + '" onclick="toggleSet(\'' + t.id + '\')">' + t.name +
+      '<span class="at" title="插入 @" onclick="event.stopPropagation();insertRef(\'set\',\'' + t.id + '\')">@</span></button>';
+  }).join('');
+
+  $('propchips').innerHTML = P.props.map(p => {
+    const on = s.props.indexOf(p.id) >= 0 ? 'cchip on' : 'cchip';
+    return '<button class="' + on + '" onclick="toggleProp(\'' + p.id + '\')">' + p.name +
+      '<span class="at" title="插入 @" onclick="event.stopPropagation();insertRef(\'prop\',\'' + p.id + '\')">@</span></button>';
+  }).join('');
+
+  $('cam').value = s.camera || '';
+  $('desc').value = s.visual || '';
+  $('perf').value = s.performance || '';
+  $('dial').value = s.dialogue || '';
+  renderDialTimes(s);
+  $('sound').value = s.sound || '';
+  $('endf').value = s.endFrame || '';
+  $('cc').textContent = (s.visual || '').length + ' 字';
+
+  $('durs').innerHTML = DUR_OK.map(d =>
+    '<button class="dbtn' + (s.duration === d ? ' on' : '') + '" onclick="setDur(' + d + ')">' + d + ' 秒</button>').join('');
+
+  $('links').innerHTML = LINKS.map(l => {
+    const on = (s.link || 'cut') === l.id;
+    return '<button class="dbtn' + (on ? ' on' : '') + '" title="' + l.tip + '" onclick="setLink(\'' + l.id + '\')">' + l.label + '</button>';
+  }).join('');
+
+  const cfg = videoCfg();
+  const dim = videoSize();
+  $('vrseg').innerHTML = VRATIOS.map(r =>
+    '<button class="dbtn' + (cfg.ratio === r.id ? ' on' : '') + '" onclick="setVRatio(\'' + r.id + '\')">' +
+    r.label + '</button>').join('');
+  $('vszseg').innerHTML = VSIZES.map(v => {
+    const off = s.duration === 15 && !v.sec15;
+    return '<button class="dbtn' + (cfg.size === v.id ? ' on' : '') + (off ? ' dis' : '') +
+      '" onclick="setVSize(\'' + v.id + '\')">' + v.label + '</button>';
+  }).join('');
+  $('ratioLabel').textContent = cfg.ratio + ' · ' + dim.w + '×' + dim.h;
+  $('modelName').textContent = 'FastH3 OmniRef · 参考图生视频（含音频轨）';
+  $('est').textContent = '约 ' + Math.max(1, Math.round(videoEst(s.duration) / 60)) + ' 分钟';
+
+  const vbtn = $('vidbtn');
+  vbtn.disabled = busy || autoRun;
+  vbtn.textContent = (s.vcands || []).length ? '再抽 1 条视频' : '生成镜头视频';
+  const abtn = $('autoBtn');
+  if (abtn){
+    const left = pendingShots().length;
+    abtn.textContent = left ? ('一键成片 · 剩 ' + left + ' 条') : '一键成片 · 已完成';
+    abtn.disabled = !left || busy || autoRun;
+  }
+  renderCands();
+}
+
+function shotRefImage(s){
+  const groups = [
+    ['场景', P.sets, s.sets],
+    ['角色', P.chars, s.chars],
+    ['道具', P.props, s.props]
+  ];
+  for (let i = 0; i < groups.length; i++){
+    const g = groups[i];
+    const ids = g[2] || [];
+    for (let j = 0; j < ids.length; j++){
+      const it = g[1].find(x => x.id === ids[j]);
+      if (it && it.image && it.image.filename){
+        return { image: it.image, label: g[0] + '「' + it.name + '」' };
+      }
+    }
+  }
+  return null;
+}
+
+function renderRight(){
+  const s = P.shots[cur];
+  if (!s) return;
+  const f = $('frame');
+  const hasImg = !!(s.image && s.image.filename);
+  const hasVid = !!(s.video && s.video.filename);
+  $('rstate').textContent = hasVid ? '成片' : (hasImg ? '分镜图' : '空');
+
+  if (hasVid){
+    f.innerHTML = mediaHtml(s.video, 'video');
+    $('rfoot').textContent = '成片在右侧播放，' + s.duration + ' 秒含音频轨。可「换视频」替换或再抽 2 条。';
+  } else if (hasImg){
+    f.innerHTML = mediaHtml(s.image, 'image');
+    $('rfoot').textContent = '已指定首帧图。点「生成镜头视频」，成片生成后会在这里播放。';
+  } else {
+    const ref = shotRefImage(s);
+    if (ref){
+      f.innerHTML = '<img src="' + fileUrl(ref.image) + '" alt="" ' +
+        'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.92">' +
+        '<div class="reftag">首帧参考图 · ' + esc(ref.label) + '</div>';
+      $('rstate').textContent = '首帧参考图';
+      $('rfoot').textContent = '成片位置暂显关联资产的首帧参考图：' +
+        ref.label + '。生成视频后会自动切换为成片播放。';
+    } else if (s.state === 'empty'){
+      f.innerHTML = '<div class="em"><b>还没有画面</b>先在设定页给关联资产选定图片</div>';
+      $('rfoot').textContent = '选好资产图后，这里会显示首帧参考图，并可直接生成镜头视频。';
+    } else {
+      f.innerHTML = '<div class="bgimg" style="--h:' + hue(cur) + '"></div>';
+      $('rfoot').textContent = '这条镜头还没有真实产物，点按钮重新生成。';
+    }
+  }
+}
+
+function assetById(id){
+  return (P.chars || []).find(a => a.id === id) ||
+         (P.sets || []).find(a => a.id === id) ||
+         (P.props || []).find(a => a.id === id);
+}
+
+// 时间轴投影用的封面：优先本镜头角色（各镜头不同），没有角色再退到场景、道具
+function shotCover(s){
+  const a = [].concat(s.chars || [], s.sets || [], s.props || [])
+    .map(assetById).find(x => x && x.image && x.image.filename);
+  return a ? a.image : null;
+}
+
+// 关联了但画面/表演里没点名的主体，生成前拦下
+function missingSubjects(s){
+  const txt = [s.camera, s.visual, s.performance, s.sound, s.endFrame]
+    .filter(Boolean).join(' ');
+  const names = [];
+  // 场景不需要点名（吧台/酒馆等说法都算），只校验角色与道具
+  [].concat(s.chars || [], s.props || []).forEach(id => {
+    const a = assetById(id);
+    if (a && a.name && names.indexOf(a.name) < 0) names.push(a.name);
+  });
+  // 名字可能带修饰（矮人酒保 → 酒保），长名再看末两字是否出现
+  return names.filter(n => txt.indexOf(n) < 0 && !(n.length > 3 && txt.indexOf(n.slice(-2)) >= 0));
+}
+
+function renderTL(){
+  if (!$('tl')) return;   // 分镜页底部时间轴已移除，保留函数以兼容旧调用
+  const total = P.shots.reduce((a,s)=>a+s.duration,0);
+  $('tlsize').textContent = '共 ' + total + ' 秒 · ' + fmt(total);
+  $('tl').innerHTML = P.shots.map((s, i) => {
+    const w = Math.max(70, s.duration * 9);
+    const cov = shotCover(s);
+    const bg = cov
+      ? 'background-image:linear-gradient(rgba(8,9,11,.42),rgba(8,9,11,.58)),url(' + fileUrl(cov) + ');background-size:cover;background-position:center'
+      : '';
+    return '<div class="tcard' + (i === cur ? ' on' : '') + '" style="--h:' + hue(i) + ';width:' + w + 'px" title="素材投影 · 只读" onclick="pick(' + i + ')">' +
+      '<div class="bg" style="' + bg + '"></div><div class="top">' + s.no + '</div>' +
+      '<div class="lb"><span>' + s.duration + 's</span><span style="opacity:.6">' +
+      (s.state === 'video' ? '✔' : s.state === 'image' ? '◐' : '○') + '</span></div></div>';
+  }).join('');
+}
+
+/* ================= 渲染：短片 ================= */
+function ruler(total){
+  const step = total > 120 ? 20 : 10;
+  const out = [];
+  for (let t = 0; t <= total; t += step) out.push('<span>' + fmt(t) + '</span>');
+  return out.join('');
+}
+
+function filmClips(){
+  if (!P) return [];
+  if (Array.isArray(P.film) && P.film.length) return P.film;
+  return P.shots.filter(s => s.state === 'video' && s.video).map(s => ({
+    no: s.no, duration: s.duration,
+    filename: s.video.filename, subfolder: s.video.subfolder || ''
+  }));
+}
+
+function filmClock(){
+  const v = $('filmvid');
+  if (!v) return;
+  const base = filmClips().slice(0, filmCur).reduce((a, c) => a + c.duration, 0);
+  $('cnow').textContent = fmt(base + (v.currentTime || 0));
+}
+
+function bindFilmVideo(){
+  const v = $('filmvid');
+  if (!v) return;
+  v.onended = () => {
+    if (filmCur + 1 < filmClips().length) playClip(filmCur + 1);
+  };
+  v.ontimeupdate = filmClock;
+  v.onloadedmetadata = filmClock;
+}
+
+function renderFTL(){
+  const clips = filmClips();
+  $('fruler').innerHTML = ruler(clips.reduce((a, c) => a + c.duration, 0));
+  $('ftl').innerHTML = clips.map((c, i) =>
+    '<div class="tcard' + (i === filmCur ? ' on' : '') + '" onclick="playClip(' + i + ')" ' +
+    'style="--h:' + hue(i) + ';width:' + Math.max(78, c.duration * 9) + 'px;cursor:pointer">' +
+    '<div class="cap"><b>' + c.no + '</b><span style="opacity:.72">' + c.duration + 's ▶</span></div>' +
+    '<div class="bg"></div>' +
+    '<img class="shot" src="/api/frame?filename=' + encodeURIComponent(c.filename) +
+    '&subfolder=' + encodeURIComponent(c.subfolder || '') + '&t=0" ' +
+    'onerror="this.style.display=\'none\'" alt=""></div>').join('') ||
+    '<div style="font-size:12px;color:#5c6371">暂无已生成的镜头</div>';
+}
+
+function playClip(i){
+  const clips = filmClips();
+  if (!clips.length) return;
+  filmCur = Math.max(0, Math.min(i, clips.length - 1));
+  let v = $('filmvid');
+  if (!v){
+    renderFilm();
+    v = $('filmvid');
+  } else {
+    // 换源而不重建 <video>，保证自动接播不被浏览器打断
+    v.src = fileUrl(clips[filmCur]);
+  }
+  bindFilmVideo(); renderFTL(); filmClock();
+  pauseAllVideo(v);
+  if (v) v.play().catch(() => toast('浏览器拦截了自动播放，点一下播放器继续'));
+}
+
+function playFilm(){
+  const v = $('filmvid');
+  if (!v){ playClip(0); return; }
+  if (v.paused) v.play().catch(() => {}); else v.pause();
+}
+
+function renderFilm(){
+  const clips = filmClips();
+  const total = clips.reduce((a, c) => a + c.duration, 0);
+  if (filmCur >= clips.length) filmCur = 0;
+  $('filmStat').textContent = '连播 · ' + clips.length + ' 镜 · ' + fmt(total);
+  $('ctotal').textContent = '/ ' + fmt(total);
+
+  const pl = $('player');
+  if (!clips.length){
+    pl.innerHTML = '<div class="em"><b>成片预览</b>至少需要一个已生成的镜头视频</div>';
+  } else {
+    const want = fileUrl(clips[filmCur]);
+    let v = $('filmvid');
+    if (!v){
+      pl.innerHTML = '<video id="filmvid" src="' + want + '" controls preload="metadata" ' +
+        'style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#171a21"></video>';
+    } else if (v.getAttribute('src') !== want){
+      v.src = want;
+    }
+    bindFilmVideo();
+  }
+  renderFTL(); filmClock();
+}
+
+/* ================= 真实生成：ComfyUI 任务 ================= */
+const EST_SEC = { 5: 287, 8: 450, 10: 588, 15: 300 };
+
+function fileUrl(f){
+  return '/api/file?filename=' + encodeURIComponent(f.filename || '') +
+         '&subfolder=' + encodeURIComponent(f.subfolder || '');
+}
+
+function mediaHtml(f, kind){
+  const u = fileUrl(f);
+  const st = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000';
+  return kind === 'video'
+    ? '<video src="' + u + '" controls preload="metadata" style="' + st + '"></video>'
+    : '<img src="' + u + '" alt="" style="' + st + '">';
+}
+
+async function ensureComfy(){
+  let d;
+  try {
+    const r = await fetch('/api/status');
+    d = await r.json();
+  } catch (e) {
+    throw new Error('连不上本地服务，检查 server.py 是否在跑');
+  }
+  if (!d.comfy) throw new Error('ComfyUI 没在运行，请先启动 ComfyUI 后重试');
+}
+
+function projectSize(){
+  const r = (P && P.meta && P.meta.ratio) || '';
+  if (r.indexOf('9:16') >= 0) return { w: 720, h: 1280, label: '9:16 竖版' };
+  if (r.indexOf('16:9') >= 0) return { w: 1280, h: 720, label: '16:9 横版' };
+  if (r.indexOf('3:4') >= 0) return { w: 960, h: 1280, label: '3:4 竖版' };
+  if (r.indexOf('4:3') >= 0) return { w: 1280, h: 960, label: '4:3 横版' };
+  return { w: 1024, h: 1024, label: '1:1' };
+}
+
+/* 视频规格：画幅 16:9 / 9:16 + 三档像素，存在项目 meta 里 */
+function videoCfg(){
+  const m = (P && P.meta) || {};
+  return {
+    ratio: m.vratio === '9:16' ? '9:16'
+         : m.vratio === '16:9' ? '16:9'
+         : (String(m.ratio || '').indexOf('9:16') >= 0 ? '9:16' : '16:9'),
+    size: VSIZES.some(x => x.id === m.vres) ? m.vres : 'mid'
+  };
+}
+function videoSize(){
+  const c = videoCfg();
+  const v = VSIZES.find(x => x.id === c.size);
+  return c.ratio === '9:16' ? v.v : v.h;
+}
+function videoEst(sec){
+  const v = VSIZES.find(x => x.id === videoCfg().size);
+  return v.est[sec] || 300;
+}
+function setVRatio(r){
+  if (!P) return;
+  P.meta = P.meta || {};
+  P.meta.vratio = r;
+  markSaved();
+  renderMid();
+}
+function setVSize(id){
+  if (!P) return;
+  const v = VSIZES.find(x => x.id === id);
+  const s = P.shots[cur];
+  if (s && s.duration === 15 && !v.sec15){
+    return toast('15 秒只支持低 / 中像素档，先改时长或换档');
+  }
+  P.meta = P.meta || {};
+  P.meta.vres = id;
+  markSaved();
+  renderMid();
+}
+
+async function submitJob(mode, prompt, seconds, image, dim, dest, extraImages){
+  dim = dim || projectSize();
+  const body = { mode: mode, prompt: prompt, seconds: seconds, image: image || null };
+  if (mode === 'image'){ body.width = dim.w; body.height = dim.h; }
+  else if (dim){ body.width = dim.w; body.height = dim.h; }
+  if (extraImages && extraImages.length) body.images = extraImages;
+  if (dest && dest.kind && pid){ body.project = pid; body.kind = dest.kind; }
+  if (dest && dest.desc !== undefined){
+    body.desc = dest.desc;
+    body.style = dest.style || '';
+  }
+  const r = await fetch('/api/generate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ('提交失败 HTTP ' + r.status));
+  if (!d.id) throw new Error('提交失败：没有任务号');
+  return d.id;
+}
+
+async function waitJob(id, onUpdate){
+  const started = Date.now();
+  for (;;) {
+    await new Promise(res => setTimeout(res, 1500));
+    let j;
+    try {
+      const r = await fetch('/api/job?id=' + encodeURIComponent(id));
+      j = await r.json();
+    } catch (e) {
+      throw new Error('读取任务状态失败');
+    }
+    if (onUpdate) onUpdate(j);
+    if (j.state === 'done') return j;
+    if (j.state === 'cancelled') throw new Error('已取消生成');
+    if (j.state === 'error') throw new Error(j.error || '生成失败');
+    if (Date.now() - started > 30 * 60 * 1000) throw new Error('等待超时');
+  }
+}
+
+function pctByTime(started, totalSec){
+  return Math.min(95, (Date.now() - started) / 1000 / totalSec * 100);
+}
+
+function pickFile(files, kind){
+  return (files || []).find(f => f.kind === kind) || (files || [])[0] || null;
+}
+
+async function imageDataUrl(f){
+  const r = await fetch(fileUrl(f));
+  if (!r.ok) throw new Error('读取分镜图失败');
+  const blob = await r.blob();
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(fr.result);
+    fr.onerror = () => rej(new Error('读取分镜图失败'));
+    fr.readAsDataURL(blob);
+  });
+}
+
+function makeProg(ids){
+  let last = '';
+  return {
+    start(){
+      last = '';
+      $(ids.log).innerHTML = '';
+      $(ids.prog).classList.add('on');
+      $(ids.log).classList.add('on');
+      $(ids.fill).style.width = '0';
+      $(ids.pct).textContent = '0%';
+      $(ids.stage).textContent = '准备中';
+    },
+    stage(name, pct){
+      if (pct != null){
+        const v = Math.max(0, Math.min(95, Math.round(pct)));
+        $(ids.fill).style.width = v + '%';
+        $(ids.pct).textContent = v + '%';
+      }
+      const t = name || '生成中';
+      $(ids.stage).textContent = t;
+      if (t !== last){
+        last = t;
+        $(ids.log).insertAdjacentHTML('beforeend', '· ' + esc(t) + '<br>');
+      }
+    },
+    fail(msg){
+      $(ids.stage).textContent = '失败';
+      $(ids.log).insertAdjacentHTML('beforeend',
+        '<div style="color:var(--bad)">✕ ' + esc(msg) + '</div>');
+    },
+    done(){
+      $(ids.fill).style.width = '100%';
+      $(ids.pct).textContent = '100%';
+      $(ids.stage).textContent = '完成';
+      $(ids.log).insertAdjacentHTML('beforeend',
+        '<div style="color:var(--ok)">✔ 产物已就绪</div>');
+    },
+    end(){
+      setTimeout(() => {
+        $(ids.prog).classList.remove('on');
+        $(ids.log).classList.remove('on');
+        $(ids.fill).style.width = '0';
+      }, 600);
+    }
+  };
+}
+
+function names(ids, lookup){
+  return (ids || []).map(id => { const a = lookup(id); return a ? a.name : id; }).join('、');
+}
+
+function assetRef(ids, lookup, label, skip){
+  return (ids || []).map(id => {
+    const a = lookup(id);
+    if (!a || (skip && skip.has(a.name))) return '';
+    const desc = (a.desc || '').trim();
+    let extra = desc;
+    if (desc.indexOf(a.name) === 0) extra = desc.slice(a.name.length).replace(/^[，,、\s]+/, '');
+    return label + '「' + a.name + '」' + (extra ? '（' + extra + '）' : '');
+  }).filter(Boolean).join('、');
+}
+
+function shotPrompt(s, forVideo){
+  const parts = [];
+  const tokens = new Set();
+  (s.visual || '').replace(/@([^\s@，。；、：:,.]+)/g, (m, name) => {
+    tokens.add(name);
+    return m;
+  });
+  const visual = expandRefTokens(s.visual || '').trim();
+  if (visual) parts.push(visual);
+  if (s.performance) parts.push('表演：' + s.performance);
+  const ch = assetRef(s.chars, charById, '角色', tokens);
+  if (ch) parts.push('出场角色：' + ch);
+  const sc = assetRef(s.sets, id => P.sets.find(x => x.id === id), '场景', tokens);
+  if (sc) parts.push('场景：' + sc);
+  const pr = assetRef(s.props, propById, '道具', tokens);
+  if (pr) parts.push('道具：' + pr);
+  if (forVideo && s.dialogue) parts.push('台词：' + s.dialogue);
+  if (P.style) parts.push('画风：' + P.style);
+  return parts.join('。');
+}
+
+/* ================= 快速模式 ================= */
+function qrender(){
+  $('qseg').innerHTML = QMODES.map(m =>
+    '<button class="tbtn' + (Q.mode === m.id ? ' on' : '') + '" onclick="setQMode(\'' + m.id + '\')">' +
+    m.label + '</button>').join('');
+
+  const isVideo = Q.mode !== 't2i';
+  $('qimgblock').style.display = Q.mode === 'i2v' ? 'block' : 'none';
+  paintRef();
+  $('qdurblock').style.display = isVideo ? 'block' : 'none';
+  $('qdurs').innerHTML = DUR_OK.map(d =>
+    '<button class="dbtn' + (Q.sec === d ? ' on' : '') + '" onclick="setQDur(' + d + ')">' + d + ' 秒</button>').join('');
+
+  const m = QMODES.find(x => x.id === Q.mode);
+  $('qmodel').textContent = m.model;
+  $('qest').textContent = isVideo ? (EST[Q.sec] || '约 60 秒') : '约 16 秒';
+  $('qbtn').textContent = isVideo ? '生成视频' : '生成图片';
+  $('qbtn').disabled = Q.busy;
+  $('qstate').textContent = Q.state === 'empty' ? '空' : (Q.state === 'video' ? '视频' : '图片');
+  qframe();
+}
+
+function qframe(){
+  const f = $('qframe');
+  if (Q.state === 'empty' || !Q.result){
+    f.innerHTML = '<div class="em"><b>还没有结果</b>写好提示词后点生成</div>';
+    $('qfoot').textContent = '快速模式是无状态的：结果不会写进项目，也不会占用分镜数据。';
+    return;
+  }
+  if (Q.state === 'video'){
+    f.innerHTML = mediaHtml(Q.result, 'video');
+    $('qfoot').textContent = '已生成 ' + Q.sec + ' 秒视频，含音频轨。可重做，或切到全案模式继续排分镜。';
+  } else {
+    f.innerHTML = mediaHtml(Q.result, 'image');
+    $('qfoot').textContent = '真实文生图结果。可以切到「图生视频」拿它当首帧。';
+  }
+}
+
+function setQMode(id){ Q.mode = id; Q.state = 'empty'; Q.result = null; qrender(); }
+function setQDur(d){ Q.sec = d; qrender(); }
+
+function qpick(){ $('qfile').click(); }
+
+function pickRef(inp){
+  const f = inp.files && inp.files[0];
+  if (!f) return;
+  if (Q.imgUrl) URL.revokeObjectURL(Q.imgUrl);
+  Q.hasImg = true;
+  Q.imgName = f.name;
+  Q.imgUrl = URL.createObjectURL(f);
+  Q.imgData = '';
+  const fr = new FileReader();
+  fr.onload = () => { Q.imgData = fr.result; };
+  fr.onerror = () => toast('参考图读取失败');
+  fr.readAsDataURL(f);
+  paintRef();
+  toast('已添加参考图 ' + f.name);
+}
+
+function qclear(){
+  Q.hasImg = false;
+  if (Q.imgUrl) URL.revokeObjectURL(Q.imgUrl);
+  Q.imgUrl = '';
+  Q.imgName = '';
+  Q.imgData = '';
+  $('qfile').value = '';
+  paintRef();
+  toast('已取消参考图');
+}
+
+function paintRef(){
+  const u = $('qupload');
+  if (Q.hasImg){
+    u.classList.add('on');
+    u.innerHTML = '<img src="' + Q.imgUrl + '" style="max-width:100%;max-height:150px;object-fit:contain;border-radius:6px;display:block;margin:0 auto">';
+    $('qfilename').textContent = Q.imgName + '（点击上方可换一张）';
+    $('qclearrow').style.display = 'flex';
+  } else {
+    u.classList.remove('on');
+    u.textContent = '点击选择图片（支持 png / jpg）';
+    $('qfilename').textContent = '';
+    $('qclearrow').style.display = 'none';
+  }
+}
+
+function qgen(){
+  if (Q.busy) return;
+  const text = $('qprompt').value.trim();
+  if (!text){ toast('先写一句提示词'); return; }
+  if (Q.mode === 'i2v' && !Q.imgData){ toast('图生视频需要先选一张参考图'); return; }
+  const label = Q.mode === 't2i' ? '1 张图片（约 16 秒）'
+              : Q.mode === 'i2v' ? '1 条 ' + Q.sec + ' 秒图生视频（含音频）'
+              : '1 条 ' + Q.sec + ' 秒文生视频（含音频）';
+  confirmGen('确认生成', '将生成 <b>' + label + '</b>。生成期间按钮会锁定。', text,
+    () => doQGen(text));
+}
+
+async function doQGen(text){
+  const mode = Q.mode === 'i2v' ? 'audio_video_i2v'
+             : Q.mode === 't2v' ? 'audio_video' : 'image';
+  const sec = Q.mode === 't2i' ? 5 : Q.sec;
+  const dim = (Q.mode !== 'i2v' && sec === 15) ? { w: 768, h: 432 } : projectSize();
+  const ui = makeProg({ prog: 'qprog', fill: 'qpfill', pct: 'qppct',
+                        stage: 'qpstage', log: 'qlog' });
+
+  Q.busy = true;
+  qrender();
+  ui.start();
+  const started = Date.now();
+  try {
+    await ensureComfy();
+    ui.stage('提交任务', 2);
+    const jid = await submitJob(mode, text, sec,
+      mode === 'audio_video_i2v' ? Q.imgData : null, dim);
+    const est = mode === 'image' ? 16 : (EST_SEC[sec] || 300);
+    const job = await waitJob(jid, j => ui.stage(j.stage, pctByTime(started, est)));
+    const f = pickFile(job.files, mode === 'image' ? 'image' : 'video');
+    if (!f) throw new Error('任务完成但没有产物文件');
+    Q.result = { filename: f.filename, subfolder: f.subfolder || '' };
+    Q.state = mode === 'image' ? 'image' : 'video';
+    ui.done();
+    toast(mode === 'image' ? '图片已生成' : '视频已生成');
+  } catch (e) {
+    ui.fail(e.message);
+    toast('生成失败：' + e.message);
+  } finally {
+    Q.busy = false;
+    qrender();
+    ui.end();
+  }
+}
+
+/* ================= 交互 ================= */
+function pick(i){ pauseAllVideo(); cur = i; renderList(); renderMid(); renderRight(); renderTL(); }
+
+function toggleChar(id){
+  const s = P.shots[cur];
+  const k = s.chars.indexOf(id);
+  if (k >= 0) s.chars.splice(k, 1); else s.chars.push(id);
+  markSaved(); renderMid(); renderRight(); renderScenes();
+}
+
+function toggleProp(id){
+  const s = P.shots[cur];
+  const k = s.props.indexOf(id);
+  if (k >= 0) s.props.splice(k, 1); else s.props.push(id);
+  markSaved(); renderMid();
+}
+
+function toggleSet(id){
+  const s = P.shots[cur];
+  const k = s.sets.indexOf(id);
+  if (k >= 0) s.sets.splice(k, 1); else s.sets.push(id);
+  markSaved(); renderMid();
+}
+
+/* ---- @ 引用：点击 chip 上的 @ 插入资产名，生成时展开为描述 ---- */
+function assetInline(a){
+  const desc = (a.desc || '').trim();
+  let extra = desc;
+  if (desc.indexOf(a.name) === 0) extra = desc.slice(a.name.length).replace(/^[，,、\s]+/, '');
+  return '「' + a.name + '」' + (extra ? '（' + extra + '）' : '');
+}
+
+function insertRef(kind, id){
+  const s = P.shots[cur];
+  if (!s) return;
+  const a = (kind === 'char' ? P.chars : kind === 'set' ? P.sets : P.props)
+    .find(x => x.id === id);
+  if (!a) return;
+  const ta = $('desc');
+  const start = ta.selectionStart == null ? ta.value.length : ta.selectionStart;
+  const end = ta.selectionEnd == null ? start : ta.selectionEnd;
+  const v = ta.value;
+  const pre = v.slice(0, start);
+  const pad = pre && !/\s$/.test(pre) ? ' ' : '';
+  const text = pad + '@' + a.name + ' ';
+  ta.value = pre + text + v.slice(end);
+  const pos = start + text.length;
+  ta.setSelectionRange(pos, pos);
+  ta.focus();
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/* Resolve an @token / speaker name to its asset: exact `name` first, then the `alias`
+   list. A character can be stored as「酒保老麦」but written as「老麦」in the script, so
+   name-only lookups rejected valid references (shot 3-1 of ep 1 hit exactly this). */
+function findAsset(n){
+  const all = P.chars.concat(P.sets || [], P.props || []);
+  return all.find(x => x.name === n) || all.find(x => (x.alias || []).indexOf(n) >= 0) || null;
+}
+
+function badRefTokens(text){
+  const out = [];
+  (text || '').replace(/@([^\s@，。；、：:,.]+)/g, (m, name) => {
+    if (!findAsset(name) && out.indexOf(name) < 0) out.push(name);
+    return m;
+  });
+  return out;
+}
+
+function expandRefTokens(text){
+  return (text || '').replace(/@([^\s@，。；、：:,.]+)/g, (m, name) => {
+    const a = findAsset(name);
+    return a ? assetInline(a) : m;
+  });
+}
+
+/* 引用图顺序：场景 → 角色 → 道具，最多 9 张（OmniRef 上限） */
+function shotRefList(s){
+  const out = [];
+  const push = (kind, a) => {
+    if (!a || !a.image || !a.image.filename) return;
+    if (out.some(x => x.a.image.filename === a.image.filename &&
+                      (x.a.image.subfolder || '') === (a.image.subfolder || ''))) return;
+    out.push({ kind: kind, a: a });
+  };
+  (s.sets || []).forEach(id => push('场景', P.sets.find(x => x.id === id)));
+  (s.chars || []).forEach(id => push('角色', P.chars.find(x => x.id === id)));
+  (s.props || []).forEach(id => push('道具', P.props.find(x => x.id === id)));
+  return out.slice(0, 9);
+}
+
+function shotRefImages(s){
+  return shotRefList(s).map(x => x.a.image);
+}
+
+function composeRefPrompt(s){
+  const refs = shotRefList(s);
+  const map = refs.map((r, i) => '参考图' + (i + 1) + '是' + r.kind + '「' + r.a.name + '」').join('，');
+  const visual = expandRefTokens(s.visual || '').trim();
+  const hasScene = refs.length && refs[0].kind === '场景';
+  return map + '。' +
+    (hasScene
+      ? '请把参考图中的角色和道具放进参考图1的场景中，'
+      : '请以参考图1为基础合成镜头画面，') +
+    '保持角色五官、发型、服装与参考图一致，道具外观与参考图一致。' +
+    (visual ? '画面内容：' + visual + '。' : '') +
+    '保持画风统一，光影自然融合，构图自然，不要出现文字、水印。';
+}
+
+function nextId(prefix, arr){
+  let i = arr.length + 1;
+  while (arr.some(x => x.id === prefix + i)) i++;
+  return prefix + i;
+}
+
+/* ================= 新建弹层 ================= */
+function openModal(title, body, onOk){
+  $('moTitle').textContent = title;
+  $('moBody').innerHTML = body;
+  $('moOk').textContent = '确认';
+  $('moOk').onclick = () => { if (!onOk || onOk() !== false) closeModal(); };
+  $('modal').classList.add('on');
+}
+
+function closeModal(){
+  $('modal').classList.remove('on');
+  $('moOk').style.display = '';
+}
+
+function addAsset(){
+  const def = castFilter === 'set' ? 'set' : castFilter === 'prop' ? 'prop' : 'char';
+  const kinds = [['char', '角色'], ['set', '场景'], ['prop', '道具']];
+  openModal('新建资产',
+    '<label class="mlbl">类型</label>' +
+    '<select class="sel" id="maKind">' + kinds.map(k =>
+      '<option value="' + k[0] + '"' + (k[0] === def ? ' selected' : '') + '>' + k[1] + '</option>').join('') + '</select>' +
+    '<label class="mlbl">名称</label>' +
+    '<input class="minput" id="maName" placeholder="例如：酒馆老板娘">' +
+    '<label class="mlbl">定位（角色填主角 / 配角 / 反派，其余可留空）</label>' +
+    '<input class="minput" id="maRole" placeholder="配角">',
+    () => {
+      const kind = $('maKind').value;
+      const name = $('maName').value.trim();
+      if (!name){ toast('先填一个名称'); return false; }
+      const role = $('maRole').value.trim();
+      let newId;
+      if (kind === 'char'){
+        newId = nextId('c', P.chars);
+        P.chars.push({ id: newId, name: name, role: role || '配角', voice: '旁白', locked: false });
+      } else if (kind === 'set'){
+        newId = nextId('t', P.sets);
+        P.sets.push({ id: newId, name: name, locked: false });
+      } else {
+        newId = nextId('p', P.props);
+        P.props.push({ id: newId, name: name, locked: false });
+      }
+      // 保持当前列表可见：类型不符时回到「全部」，不要跳到只看某一类的页面
+      if (castFilter !== 'all' && castFilter !== kind){
+        castFilter = 'all';
+        $('castSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.f === 'all'));
+      }
+      openAssets.add(kind + ':' + newId);   // 新行直接展开提示词
+      markSaved(); renderCast(); renderMid();
+      const wrap = document.querySelector('.castwrap');
+      if (wrap) wrap.scrollTop = wrap.scrollHeight;
+      toast('已新增' + ({ char: '角色', set: '场景', prop: '道具' })[kind] + '「' + name + '」，写提示词后点「抽 4 张」');
+      return true;
+    });
+  setTimeout(() => { const n = $('maName'); if (n) n.focus(); }, 40);
+}
+
+function removeAsset(kind, id){
+  const it = assetArr(kind).find(x => x.id === id);
+  const nm = it ? it.name : '该资产';
+  openModal('删除资产',
+    '<p style="font-size:12.5px;color:var(--txt);line-height:1.8">确定删除「' + esc(nm) + '」？<br>' +
+    '<span style="color:var(--dim);font-size:11.5px">引用它的镜头会同步解除关联，已生成的图片文件不会删除。</span></p>',
+    () => { doRemoveAsset(kind, id); return true; });
+}
+
+function doRemoveAsset(kind, id){
+  if (kind === 'char'){
+    P.chars = P.chars.filter(x => x.id !== id);
+    P.shots.forEach(s => { const k = s.chars.indexOf(id); if (k >= 0) s.chars.splice(k, 1); });
+  } else if (kind === 'set'){
+    P.sets = P.sets.filter(x => x.id !== id);
+    P.shots.forEach(s => { const k = s.sets.indexOf(id); if (k >= 0) s.sets.splice(k, 1); });
+  } else {
+    P.props = P.props.filter(x => x.id !== id);
+    P.shots.forEach(s => { const k = s.props.indexOf(id); if (k >= 0) s.props.splice(k, 1); });
+  }
+  markSaved();
+  renderAll();
+  toast('已删除该资产，引用它的镜头已同步解除');
+}
+
+function newShot(){
+  const curScene = P.shots[cur] ? P.shots[cur].scene : (P.scenes[0] ? P.scenes[0].no : 1);
+  const scOpts = P.scenes.map(sc =>
+    '<option value="' + sc.no + '"' + (sc.no === curScene ? ' selected' : '') + '>场次 ' +
+    sc.no + ' · ' + sc.name + '</option>').join('');
+  const dOpts = DUR_OK.map(d =>
+    '<option value="' + d + '"' + (d === 5 ? ' selected' : '') + '>' + d + ' 秒</option>').join('');
+  openModal('新建镜头',
+    '<label class="mlbl">所属场次</label><select class="sel" id="msScene">' + scOpts + '</select>' +
+    '<label class="mlbl">时长</label><select class="sel" id="msDur">' + dOpts + '</select>' +
+    '<label class="mlbl">画面描述（可先留空，之后在分镜页补）</label>' +
+    '<textarea class="mta" id="msVisual" placeholder="例如：中景，固定机位，50mm，雨夜酒馆门口…"></textarea>',
+    () => {
+      const sc = parseInt($('msScene').value, 10);
+      const dur = parseInt($('msDur').value, 10);
+      const visual = $('msVisual').value.trim();
+      let idx = -1;
+      P.shots.forEach((s, i) => { if (s.scene === sc) idx = i; });
+      const shot = { no: '', scene: sc, duration: dur, state: 'empty',
+        chars: [], props: [], sets: P.sets.length ? [P.sets[0].id] : [],
+        visual: visual, camera: '', performance: '', dialogue: '', sound: '', endFrame: '' };
+      if (idx < 0){ P.shots.push(shot); idx = P.shots.length - 1; }
+      else { P.shots.splice(idx + 1, 0, shot); idx = idx + 1; }
+      P.shots.filter(s => s.scene === sc).forEach((s, i) => { s.no = sc + '-' + (i + 1); });
+      cur = idx;
+      recomputeScenes(); markSaved(); renderAll(true);
+      toast('已新建镜头 ' + P.shots[cur].no + ' · ' + dur + ' 秒，已定位到该镜头');
+      return true;
+    });
+}
+
+function delShot(){
+  if (!P || P.shots.length <= 1) return toast('至少要保留一个镜头');
+  const s = P.shots[cur];
+  if (!s) return;
+  const nCand = (s.vcands || []).length + (s.icands || []).length;
+  openModal('删除镜头 ' + s.no,
+    '<div class="mnote">将删除<b>镜头 ' + s.no + '</b>：画面、表演、台词、声音、落幅以及' +
+    (nCand ? ' <b>' + nCand + ' 条</b>生成候选记录' : '该镜头的生成记录') +
+    '都会从项目里移除（磁盘上的成片文件不会被删）。<br>后续镜头编号会自动顺延，此操作不可撤销。</div>',
+    () => {
+      const sc = s.scene;
+      P.shots.splice(cur, 1);
+      P.shots.filter(x => x.scene === sc).forEach((x, i) => { x.no = sc + '-' + (i + 1); });
+      cur = Math.max(0, Math.min(cur, P.shots.length - 1));
+      recomputeScenes(); markSaved(); renderAll(true);
+      toast('已删除镜头，剩余编号已顺延');
+      return true;
+    });
+}
+
+const SIZES = ['大远景','远景','全景','中景','中近景','近景','特写','微距'];
+function shotSize(s){
+  const t = (s.camera || '') + ' ' + (s.visual || '');
+  for (const k of SIZES) if (t.indexOf(k) >= 0) return k;
+  return '';
+}
+
+function healthCheck(){
+  if (!P) return;
+  const bad = [];
+  const add = (no, msg) => bad.push({ no, msg });
+  const multi = P.chars.length > 1;
+  P.shots.forEach(s => {
+    const dial = (s.dialogue || '').trim();
+    const perf = (s.performance || '').trim();
+    if (!dial && !perf && !(s.chars || []).length && (s.duration > 5 || (s.visual || '').length < 24))
+      add(s.no, '无角色、无表演、无台词的空镜，确认它是否承担节奏或信息作用');
+    if (!dial && !perf && s.duration > 5)
+      add(s.no, '空镜 ' + s.duration + ' 秒偏长，建议 5 秒以内');
+    const miss = missingSubjects(s);
+    if (miss.length)
+      add(s.no, '关联了「' + miss.join('、') + '」但文字里没写到，生成时会被拦下');
+    if (dial && multi && dial.indexOf('@') < 0 && dial.indexOf('旁白') < 0)
+      add(s.no, '多角色镜头但台词没标 @说话人，会被当成旁白');
+    if (dial.length > 40) add(s.no, '台词 ' + dial.length + ' 字，单镜超过 30 字口型容易糊');
+    if (!(s.camera || '').trim() && !shotSize(s))
+      add(s.no, '没写景别/机位，生成结果容易不可控');
+  });
+  for (let i = 0; i + 2 < P.shots.length; i++){
+    const a = shotSize(P.shots[i]), b = shotSize(P.shots[i+1]), c = shotSize(P.shots[i+2]);
+    if (a && a === b && b === c) add(P.shots[i+1].no, '连续三镜都是' + a + '，节奏可能偏单调');
+  }
+  if (!bad.length){
+    openModal('分镜体检', '<div class="mnote">10 项规则全部通过，没有发现明显问题。</div>');
+    return;
+  }
+  const rows = bad.map(x =>
+    '<div class="hrow" onclick="jumpShot(\'' + x.no + '\')"><b>镜头 ' + x.no + '</b><span>' + esc(x.msg) + '</span></div>').join('');
+  openModal('分镜体检 · ' + bad.length + ' 条',
+    '<div class="mnote">点击任意一条可直接跳到对应镜头。这里只做检查提示，不自动修改你的分镜。</div>' + rows);
+}
+
+function jumpShot(no){
+  const i = P.shots.findIndex(s => s.no === no);
+  if (i < 0) return;
+  closeModal(); goto('shots'); cur = i;
+  renderList(); renderMid(); renderRight(); renderTL();
+}
+
+function setDur(d){
+  P.shots[cur].duration = d;
+  recomputeScenes();
+  markSaved(); renderMid(); renderTL(); renderFilm(); renderScenes(); renderList();
+  renderDialTimes(P.shots[cur]);
+}
+
+function setLink(id){
+  if (!P || !P.shots[cur]) return;
+  P.shots[cur].link = id;
+  markSaved(); renderMid();
+}
+
+function recomputeScenes(){
+  let t = 0;
+  P.scenes.forEach(sc => {
+    sc.from = t;
+    t += P.shots.filter(s => s.scene === sc.no).reduce((a,s)=>a+s.duration, 0);
+    sc.to = t;
+  });
+}
+
+/* ================= URL 状态：刷新 / 后退不丢位置 ================= */
+function navHash(v){
+  if (v === 'home') return '';
+  if (v === 'quick') return '#/quick';
+  return '#/project/' + encodeURIComponent(pid) + '/' + v;
+}
+
+function syncHash(v){
+  const h = navHash(v);
+  if (location.hash === h) return;
+  if (!h){
+    history.replaceState(null, '', location.pathname + location.search);
+    return;
+  }
+  location.hash = h;
+}
+
+function parseHash(){
+  const h = location.hash || '';
+  if (!h || h === '#' || h === '#/') return { view: 'home' };
+  if (h === '#/quick') return { view: 'quick' };
+  const m = h.match(/^#\/project\/([A-Za-z0-9_-]+)\/(script|cast|library|shots|film)$/);
+  return m ? { view: m[2], id: m[1] } : null;
+}
+
+async function applyHash(){
+  const t = parseHash();
+  if (!t) return false;
+  if (t.view === 'home'){
+    if (view !== 'home') goto('home');
+    return true;
+  }
+  if (t.view === 'quick'){
+    if (view !== 'quick') goto('quick');
+    return true;
+  }
+  if (P && pid === t.id){
+    if (view !== t.view) goto(t.view);
+    return true;
+  }
+  return openProject(t.id, t.view);
+}
+
+window.addEventListener('hashchange', async () => {
+  const ok = await applyHash();
+  if (!ok) goto('home');
+});
+
+function pauseAllVideo(except){
+  document.querySelectorAll('video').forEach(v => {
+    if (v !== except && !v.paused){ try { v.pause(); } catch (e) {} }
+  });
+}
+
+function goto(v){
+  const isFull = ['script','cast','library','shots','film'].indexOf(v) >= 0;
+  if (isFull && !P) return;
+  view = v;
+  pauseAllVideo();
+  $('epsel').style.display = isFull ? '' : 'none';
+  $('steps').style.display = isFull ? 'flex' : 'none';
+  $('libbtn').style.display = isFull ? '' : 'none';
+  $('savebadge').style.display = v === 'home' ? 'none' : 'flex';
+  $('backbtn').style.display = v === 'home' ? 'none' : 'block';
+  $('pname').textContent = isFull ? P.title : (v === 'quick' ? '快速生成' : 'AI 工作室');
+  $('steps').querySelectorAll('.step').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  [['home','vhome'],['quick','vquick'],['script','vscript'],['cast','vcast'],
+   ['library','vlibrary'],['shots','vshots'],['film','vfilm']]
+    .forEach(p => $(p[1]).classList.toggle('on', p[0] === v));
+  if (v === 'film') renderFilm();
+  if (v === 'home') refreshHome();
+  if (v === 'cast') renderCast();
+  if (v === 'library') loadLibrary();
+  if (v === 'quick') qrender();
+  syncHash(v);
+}
+
+$('steps').querySelectorAll('.step').forEach(b => {
+  b.onclick = () => goto(b.dataset.view);
+});
+
+document.querySelectorAll('[data-go]').forEach(el => {
+  el.addEventListener('click', () => goto(el.dataset.go));
+});
+
+$('castSeg').querySelectorAll('button').forEach(b => {
+  b.onclick = () => {
+    castFilter = b.dataset.f;
+    $('castSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderCast();
+  };
+});
+
+$('libSeg').querySelectorAll('button').forEach(b => {
+  b.onclick = () => {
+    libFilter = b.dataset.f;
+    $('libSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderLibrary();
+  };
+});
+
+$('desc').addEventListener('input', e => {
+  P.shots[cur].visual = e.target.value;
+  $('cc').textContent = e.target.value.length + ' 字';
+  markSaved();
+});
+$('cam').addEventListener('input', e => { P.shots[cur].camera = e.target.value; markSaved(); });
+$('sound').addEventListener('input', e => { P.shots[cur].sound = e.target.value; markSaved(); });
+$('endf').addEventListener('input', e => { P.shots[cur].endFrame = e.target.value; markSaved(); });
+$('perf').addEventListener('input', e => { P.shots[cur].performance = e.target.value; markSaved(); });
+let _dtTimer = 0;
+$('dial').addEventListener('input', e => {
+  P.shots[cur].dialogue = e.target.value;
+  markSaved();
+  clearTimeout(_dtTimer);
+  _dtTimer = setTimeout(() => renderDialTimes(P.shots[cur]), 400);
+});
+
+$('scriptBody').addEventListener('input', () => {
+  renderScenes();
+  const r = parseScript($('scriptBody').value);
+  const chip = $('scriptCheck');
+  if (r.errs.length){
+    chip.className = 'statechip bad';
+    chip.textContent = '⚠ ' + r.errs.length + ' 处问题';
+  } else {
+    chip.className = 'statechip';
+    chip.textContent = '待确认';
+  }
+  P.draft = $('scriptBody').value;
+  markSaved();
+});
+
+/* 分镜不单独生成图：直接把关联资产图作为 OmniRef 参考图，最多 9 张 */
+function refDesc(a){
+  const d = (a.desc || '').trim();
+  if (d.indexOf(a.name) === 0) return d.slice(a.name.length).replace(/^[，,、\s]+/, '');
+  return d;
+}
+
+/* ===== RunningHub 五段式分镜：整段粘贴解析 ===== */
+function parseShotBlock(text){
+  const t = String(text || '').replace(/\r/g, '');
+  const STOP = '(?=【[^】]*】|落幅[：:]|镜头\\s*\\d+\\s*[·：:]|$)';
+  const seg = name => {
+    const m = t.match(new RegExp('【' + name + '】([\\s\\S]*?)' + STOP));
+    return m ? m[1].trim() : '';
+  };
+  const end = t.match(new RegExp('落幅[：:]([\\s\\S]*?)' + STOP));
+  return {
+    camera: seg('镜头'),
+    visual: seg('画面'),
+    performance: seg('表演'),
+    dialogue: seg('台词'),
+    sound: seg('声音'),
+    endFrame: end ? end[1].trim() : ''
+  };
+}
+
+function pasteBlock(){
+  if (!P) return;
+  openModal('粘贴 RunningHub 分镜',
+    '<div style="font-size:12px;color:#8b93a3;line-height:1.7;margin-bottom:8px">' +
+    '整段粘贴带【镜头】【画面】【表演】【台词】【声音】和落幅的分镜，确认后自动拆进当前镜头的六个字段；空段不会覆盖已有内容。</div>' +
+    '<textarea class="lineinput" id="pbText" rows="12" style="min-height:240px" spellcheck="false" ' +
+    'placeholder="镜头1 · 4s：【镜头】…【画面】…【表演】…【台词】…【声音】… 落幅：…"></textarea>',
+    () => {
+      const parts = parseShotBlock($('pbText').value);
+      if (!parts.camera && !parts.visual && !parts.dialogue){
+        toast('没识别到【镜头】/【画面】/【台词】，检查一下粘贴内容');
+        return false;
+      }
+      const s = P.shots[cur];
+      Object.keys(parts).forEach(k => { if (parts[k]) s[k] = parts[k]; });
+      markSaved(); renderMid(); renderList(); renderRight();
+      const dm = $('pbText').value.match(/镜头\s*\d+\s*[·:]\s*(\d+(?:\.\d+)?)\s*s/i);
+      if (dm && +dm[1] !== s.duration){
+        toast('已拆入当前镜头；原文 ' + dm[1] + ' 秒，本机只支持 5/8/10/15 秒，时长请手动选');
+      } else {
+        toast('已拆入当前镜头，确认内容再生成');
+      }
+    });
+  $('moOk').textContent = '填入当前镜头';
+}
+
+/* 台词解析：每行一条
+   @角色（语气·语速）说：「台词」
+   旁白（语气）叙述：「台词」
+   @角色：台词
+   纯台词（单角色镜头归该角色，多角色镜头按旁白） */
+function charByName(n){
+  // Alias-aware: the script writes「老麦」for the character stored as「酒保老麦」
+  return P.chars.find(c => c.name === n)
+      || P.chars.find(c => (c.alias || []).indexOf(n) >= 0) || null;
+}
+
+function parseDialogue(s){
+  const raw = String((s && s.dialogue) || '').trim();
+  if (!raw) return [];
+  const out = [];
+  raw.split(/\r?\n/).forEach(line => {
+    let body = line.trim();
+    if (!body) return;
+    // 行首可写 [2.5s] / [2.5] / [2.5秒] 指定这句台词出现在第几秒
+    let sec = null;
+    const tm = body.match(/^\[\s*(\d+(?:\.\d+)?)\s*(?:s|秒)?\s*\]\s*/i);
+    if (tm){ sec = parseFloat(tm[1]); body = body.slice(tm[0].length).trim(); }
+    if (!body) return;
+    let m = body.match(/^(@?[^\s@（(：:「“"]+)\s*(?:[（(]([^）)]*)[）)])?\s*(?:说|叙述|问道?|喊道?)\s*[：:]?\s*[「“"]([\s\S]*?)[」”"]\s*$/);
+    if (m){
+      const nm = m[1].replace(/^@/, '');
+      const isNarr = nm === '旁白' || nm === '画外音';
+      const c = isNarr ? null : charByName(nm);
+      out.push({ who: isNarr ? '旁白' : (c ? c.name : ''), tone: (m[2] || '').trim(),
+                 text: m[3].trim(), bad: (!isNarr && !c) ? nm : '', narr: isNarr, t: sec });
+      return;
+    }
+    m = body.match(/^@([^\s@：:，。]+)\s*[：:]\s*([\s\S]+)$/);
+    if (m){
+      const c = charByName(m[1]);
+      out.push({ who: c ? c.name : '', tone: '', text: m[2].trim(), bad: c ? '' : m[1], narr: false, t: sec });
+      return;
+    }
+    out.push({ who: '', tone: '', text: body, bad: '', narr: false, t: sec });
+  });
+  return out;
+}
+
+function badDialogueTokens(s){
+  return parseDialogue(s).filter(l => l.bad).map(l => l.bad);
+}
+
+/* 台词时间：手填秒数（写回行首 [X.Xs]），留空按镜头时长均匀分布 */
+function renderDialTimes(s){
+  const box = $('dialTime');
+  if (!box) return;
+  const lines = parseDialogue(s);
+  if (!lines.length){ box.innerHTML = ''; return; }
+  const dur = Number(s.duration) || 5;
+  const safe = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  box.innerHTML = '<div class="dtlbl">台词时间（秒，留空自动分布）</div>' + lines.map((l, i) => {
+    const auto = Math.min(dur - 0.8, 1.0 + i * ((dur - 1.6) / Math.max(1, lines.length))).toFixed(1);
+    const v = (l.t === null || l.t === undefined) ? '' : l.t;
+    const who = l.narr ? '旁白' : (l.who || l.bad || '台词');
+    return '<div class="dtrow"><input class="dtin" type="number" step="0.5" min="0" max="' + (dur - 0.3) +
+      '" value="' + v + '" placeholder="' + auto + '" onchange="setLineTime(' + i + ', this.value)">' +
+      '<span class="dtlbl">' + safe(who + '：' + l.text.slice(0, 14)) + '</span></div>';
+  }).join('');
+}
+
+function setLineTime(i, val){
+  const s = P.shots[cur];
+  const all = String(s.dialogue || '').split(/\r?\n/);
+  const t = Number(val);
+  let k = -1;
+  for (let n = 0; n < all.length; n++){
+    const body = all[n].trim();
+    if (!body) continue;
+    k++;
+    if (k !== i) continue;
+    const bare = body.replace(/^\s*\[\s*\d+(?:\.\d+)?\s*(?:s|秒)?\s*\]\s*/i, '').trim();
+    all[n] = (val !== '' && isFinite(t) && t >= 0) ? ('[' + t.toFixed(1) + 's] ' + bare) : bare;
+  }
+  s.dialogue = all.join('\n');
+  $('dial').value = s.dialogue;
+  markSaved();
+  renderDialTimes(s);
+}
+
+/* 说话人：@ 标注优先；没标注时单角色镜头归该角色，多角色镜头按旁白 */
+function dialogueLines(s){
+  const lines = parseDialogue(s);
+  const named = (s.chars || []).map(id => (charById(id) || {}).name).filter(Boolean);
+  const fallback = named.length === 1 ? named[0] : '旁白';
+  return lines.map(l => {
+    const who = l.who || fallback;
+    return { who: who, tone: l.tone, text: l.text, narr: who === '旁白', t: l.t };
+  });
+}
+
+function r2vPrompt(s, cont){
+  const refs = shotRefList(s);
+  const E = s.en || {};
+  const meta = (P && P.meta) || {};
+  // 画面/表演里的 @引用 只是编辑标注，素材身份已由 subject_definitions 定义，正文里全部剥掉
+  const strip = t => String(t || '').replace(/@[^\s@，。；、：:,.]+/g, ' ')
+    .replace(/\s+/g, ' ').replace(/^[。，,、 ]+|[。，,、 ]+$/g, '').trim();
+  // 专名锁定：中文名（含简称）先换成资产自带的英文名，避免机翻每次译法不同
+  const nameMap = [];
+  ((P && P.chars) || []).concat((P && P.sets) || [], (P && P.props) || []).forEach(a => {
+    if (!a || !a.name || !a.en) return;
+    nameMap.push([a.name, a.en]);
+    (a.alias || []).forEach(x => { if (x) nameMap.push([x, a.en]); });
+  });
+  nameMap.sort((x, y) => y[0].length - x[0].length);
+  const enText = t => {
+    let out = String(t || '');
+    nameMap.forEach(p => { out = out.split(p[0]).join(p[1]); });
+    return out;
+  };
+  // 英文正文优先：镜头里写了 en.* 就直接用，不走机翻（长句翻译失败会把中文原样发出去，被当台词念）
+  const pick = (k, raw) => String(E[k] || enText(strip(raw))).trim();
+  const camera = pick('camera', s.camera);
+  const visual = pick('visual', s.visual);
+  const perf = pick('performance', s.performance);
+  const sound = pick('sound', s.sound);
+  const endf = pick('endFrame', s.endFrame);
+  const isEn = !!(E.visual || E.performance || E.camera);
+  const lines = dialogueLines(s);
+  const hasCast = (s.chars || []).length > 0 || refs.some(r => r.kind === '角色');
+  // 官方 Ref2VA 结构：仅六个 section，正文用英文骨架；
+  // 台词必须放在 <d>[Chinese] …</d> 内，说话人 / 语气放在标签外，且同一说话人复用同一 (Sx)
+  const KIND_EN = { '角色': 'character', '场景': 'scene', '道具': 'prop' };
+  const toneMap = meta.tone_en || {};
+  const sidMap = {};
+  const linesX = lines.map(l => {
+    const k = l.narr ? '旁白' : l.who;
+    if (!sidMap[k]) sidMap[k] = 'S' + (Object.keys(sidMap).length + 1);
+    return Object.assign({ sid: sidMap[k] }, l);
+  });
+  // 台词时间锚点：手填 [Xs] 优先，没填就按镜头时长均匀分布，避免全堆到结尾
+  const dur = Number(s.duration) || 5;
+  const autoAt = i => Math.min(dur - 0.8, 1.0 + i * ((dur - 1.6) / Math.max(1, linesX.length)));
+  const spoken = linesX.map((l, i) => {
+    const who = l.narr ? ('An off-screen narrator (' + l.sid + ')') : (enText(l.who) + ' (' + l.sid + ')');
+    const tone = l.tone ? (toneMap[l.tone] || l.tone) : '';
+    const tRaw = (l.t === null || l.t === undefined || l.t === '') ? NaN : Number(l.t);
+    const at = isFinite(tRaw) ? Math.min(dur - 0.3, Math.max(0, tRaw)) : autoAt(i);
+    return 'At about ' + at.toFixed(1) + ' s, ' + who + (tone ? ', ' + tone + ', ' : ', ') +
+      (l.narr ? 'narrates' : 'says') + ' in standard Mandarin: <d>[Chinese] ' + l.text + '</d>';
+  }).join(' ');
+  const defs = refs.map((r, i) => {
+    const a = r.a;
+    const d = String(a.desc_en || refDesc(a) || '').replace(/[。．.]+$/, '');
+    return '<Subject ' + (i + 1) + '> is the ' + (KIND_EN[r.kind] || r.kind) + ' "' + (a.en || a.name) + '", shown in <Picture ' + (i + 1) + '>' +
+      (d ? ': ' + d + '.' : '.');
+  }).join('\n');
+  const ret = refs.map((r, i) =>
+    '<Subject ' + (i + 1) + '> (appears in [Shot 1]): fully_preserved - keep the ' + (KIND_EN[r.kind] || r.kind) +
+    "'s appearance, colors and materials unchanged.").join('\n');
+  // 续接：上一镜最后一帧作为额外参考图，首帧必须从这里接上
+  const tailIdx = cont && cont.tailIndex;
+  const retTail = tailIdx
+    ? '\n<Picture ' + tailIdx + '> (continuity frame): fully_preserved - this is the last frame of the previous shot; ' +
+      'the new shot starts from the same character positions, costumes, props, background and lighting.'
+    : '';
+  const contStart = tailIdx
+    ? 'Continue seamlessly from <Picture ' + tailIdx + '>, the final frame of the previous shot: ' +
+      'same positions, costumes and lighting, no cut, the action moves on from exactly there. '
+    : '';
+  const style = 'Live-action fantasy style matching the reference images, warm cinematic lighting. ' +
+    'Start the action immediately in the first frame, keep the shot visually active the whole time, ' +
+    'and place each line at the stated time instead of saving dialogue for the end. ' +
+    'All spoken words are standard Mandarin (Putonghua); no dialect or accent; never read the descriptive text aloud. ' +
+    'Only the lines inside <d> are voiced: never speak any part of this description, in English or in Chinese.';
+  const parts = [camera, visual, perf].filter(Boolean).map(t => t.replace(/[。．.]+\s*$/, ''));
+  const body = '[Shot 1] ' + contStart + style + ' ' +
+    parts.join(isEn ? '. ' : '。') +
+    (linesX.length ? ' ' + spoken
+                   : (hasCast ? ' No spoken dialogue in this shot; characters stay silent, never read the descriptive text aloud.'
+                              : ' Empty shot with no characters and no human voice; never read the descriptive text aloud.')) +
+    (sound ? ' ' + sound.replace(/[。．.]+\s*$/, '') + '.' : '') +
+    (endf ? (isEn ? ' End frame: ' : ' 落幅：') + endf.replace(/[。．.]+\s*$/, '') + '.' : '') +
+    (meta.neg ? ' ' + meta.neg : '');
+  const soundTxt = (sound ? sound.replace(/[。．.\s]+$/, '') + '. ' : 'Natural ambience and physical action sounds. ') +
+    (linesX.length
+      ? 'Dialogue is in standard Mandarin only, no dialect, no subtitles.'
+      : 'No human voice, no narration, no subtitles.');
+  const summaryTail = String(E.summary || '').trim() ||
+    (visual || camera || 'shot as described').replace(/[。．.]+$/, '');
+  return 'subject_definitions:\n' + (defs || '(no reference images, pure text to video)') + '\n\n' +
+    'summary:\n[reference generation] Single ' + s.duration + '-second shot: ' +
+    summaryTail + '. \n\n' +
+    'retention_analysis:\n' + (ret || '(no reference images)') + retTail + '\n\n' +
+    'detailed_description:\n' + body + '\n\n' +
+    'overall_soundscape:\n' + soundTxt + '\n\n' +
+    'non_diegetic_music:\nN/A';
+}
+
+// 官方范式自检：规则来自 /api/spec（唯一事实来源 docs/h3_prompt_spec.json）
+let H3SPEC = null;
+fetch('/api/spec').then(r => r.ok ? r.json() : null).then(j => { H3SPEC = j; }).catch(() => {});
+
+function specCheck(p){
+  const S = H3SPEC || {};
+  const secs = S.sections || ['subject_definitions', 'summary', 'retention_analysis',
+                              'detailed_description', 'overall_soundscape', 'non_diegetic_music'];
+  const hits = secs.map(x => ({ t: x + ':', i: p.indexOf(x + ':') }));
+  const bad = [];
+  const miss = hits.filter(h => h.i < 0).map(h => h.t);
+  if (miss.length) bad.push('缺 section ' + miss.join(' '));
+  else if (hits.some((h, k) => k > 0 && h.i < hits[k - 1].i)) bad.push('section 顺序颠倒');
+  (S.forbidden_sections || ['dialogue:', 'input_rules:', 'language_control:'])
+    .forEach(t => { if (p.indexOf(t) >= 0) bad.push('非官方 section ' + t); });
+  (S.forbidden_tokens || ['【台词】', '【画面】']).forEach(t => {
+    if (p.indexOf(t) >= 0) bad.push('非官方标记 ' + t);
+  });
+  if (p.indexOf('says in standard Mandarin') >= 0 && !/<d>\[Chinese\]/.test(p))
+    bad.push('台词未用 <d>[Chinese] 包裹');
+  if (/\bno music\b/i.test(p)) bad.push('配乐应写 N/A');
+  return bad;
+}
+
+// 单镜生成前的全部校验与素材准备（单条生成和一键成片共用）
+async function prepareShotGen(s){
+  const bad = badRefTokens(s.visual);
+  if (bad.length) return { error: '画面描述里的 @' + bad[0] + ' 找不到对应资产' };
+  const badDial = badDialogueTokens(s);
+  if (badDial.length) return { error: '台词里的 @' + badDial[0] + ' 不是角色，先在设定页建好这个角色' };
+  const missing = missingSubjects(s);
+  if (missing.length) return { error: '画面/表演里没写到：' + missing.join('、') + '，先写清出场主体再生成' };
+  const refs = (s.image && s.image.filename) ? [s.image] : shotRefImages(s);
+  if (!refs.length) return { error: '这个镜头还没有参考图，先去设定页给关联资产选图' };
+  const cfg = videoCfg();
+  if (s.duration === 15 && cfg.size === 'high'){
+    return { error: '15 秒不支持高像素档，请在「画幅与像素」里选低 / 中' };
+  }
+  // 续接：抽上一镜最后一帧，作为额外参考图（最多 9 张）
+  let cont = null;
+  if ((s.link || 'cut') === 'continue'){
+    const idx = P.shots.indexOf(s);
+    const prev = idx > 0 ? P.shots[idx - 1] : null;
+    const pv = prev && (prev.video || (prev.vcands || [])[(prev.vcands || []).length - 1]);
+    if (!pv || !pv.filename) return { error: '续接需要上一镜先有视频，先回上一镜生成一条' };
+    if (refs.length >= 9) return { error: '参考图已占满 9 张，续接尾帧放不下，先减少素材引用' };
+    let tr;
+    try {
+      const r = await fetch('/api/tailframe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: pv.filename, subfolder: pv.subfolder || '' })
+      });
+      tr = await r.json();
+      if (!r.ok || !tr.dataurl) throw new Error(tr.error || '抽尾帧失败');
+    } catch (e) {
+      return { error: '续接失败：' + (e.message || e) };
+    }
+    cont = { dataurl: tr.dataurl, tailIndex: refs.length + 1 };
+  }
+  return { refs: refs, prompt: r2vPrompt(s, cont), dim: videoSize(), cont: cont, cfg: cfg };
+}
+
+async function genVideo(){
+  if (busy || autoRun || !P) return;
+  const s = P.shots[cur];
+  if (!s) return;
+  const prep = await prepareShotGen(s);
+  if (prep.error) return toast(prep.error);
+  const refs = prep.refs, dim = prep.dim, prompt = prep.prompt, cont = prep.cont, cfg = prep.cfg;
+  const mins = Math.max(1, Math.round(videoEst(s.duration) / 60));
+  const unlabeled = parseDialogue(s).filter(l => !l.who && !l.bad).length;
+  const warn = (unlabeled && (s.chars || []).length > 1)
+    ? '<br><span style="color:#e0a33e">注意：有 ' + unlabeled + ' 条台词没写 @角色名，这个镜头有多个角色，会按旁白处理。</span>'
+    : '';
+  const spec = specCheck(prompt);
+  const specLine = '<br>' + (spec.length
+    ? '<span style="color:#f0b37e">范式自检：' + spec.join('；') + '</span>'
+    : '<span style="color:#7fd1a0">范式自检：通过（官方六段式）</span>') +
+    '<br><span style="color:#8fa6b8">发送时正文中文会自动翻成英文（避免被当旁白念出），&lt;d&gt; 内的台词保持中文。</span>';
+  confirmGen('确认生成视频 · 镜头 ' + s.no,
+    '用 <b>1 条</b> ' + s.duration + ' 秒（' + cfg.ratio + ' · ' + dim.w + '×' + dim.h + '）参考图生视频，' +
+    '引用 ' + (refs.length + (cont ? 1 : 0)) + ' 张素材' +
+    (cont ? '（含上一镜尾帧续接）' : '') + '，约 ' + mins + ' 分钟。生成期间按钮会锁定。' + warn + specLine, prompt,
+    () => doGenVideo(s, prompt, refs, dim, cont));
+  const b = $('moOk'); if (b) b.textContent = '确认生成 1 条';
+}
+
+// 还没成片的镜头（已选用成片的跳过）
+function pendingShots(){
+  return (P && P.shots ? P.shots : []).filter(s => !(s.video && s.video.filename));
+}
+
+// 一键成片：按镜头顺序逐条串行生成，一条完全结束（产物落盘）才开下一条
+async function autoFilm(){
+  if (busy || autoRun || !P) return toast('当前正在生成，等这条结束再开一键成片');
+  const todo = pendingShots();
+  if (!todo.length) return toast('所有镜头都已有成片了，不需要一键成片');
+  // 先整体预检：任何一镜不满足生成条件就直接拦下，避免跑到一半才断
+  for (const s of todo){
+    const prep = await prepareShotGen(s);
+    if (prep.error){
+      cur = P.shots.indexOf(s);
+      renderMid(); renderRight();
+      return toast('镜头 ' + s.no + ' 还不能生成：' + prep.error);
+    }
+  }
+  const mins = Math.max(1, Math.round(todo.reduce((a, s) => a + videoEst(s.duration), 0) / 60));
+  openModal('一键成片 · ' + todo.length + ' 条镜头',
+    '按镜头顺序<b>逐条生成</b>：一条完全结束、产物落盘后才开下一条，不会并行抢显存。<br>' +
+    '已有成片的镜头会跳过。合计约 <b>' + mins + ' 分钟</b>。<br>' +
+    '<span style="color:#8fa6b8">中途可按「取消生成」停下，已经生成好的成片都会保留。</span>',
+    () => runAutoFilm(todo));
+  const b = $('moOk'); if (b) b.textContent = '开始逐条生成';
+}
+
+async function runAutoFilm(todo){
+  autoRun = true; autoStop = false;
+  const ab = $('autoBtn'); if (ab) ab.disabled = true;
+  const vb = $('vidbtn'); if (vb) vb.disabled = true;
+  let ok = 0, fail = '';
+  for (let i = 0; i < todo.length; i++){
+    const s = todo[i];
+    if (autoStop) { fail = '已手动停止'; break; }
+    if (s.video && s.video.filename) continue;
+    cur = P.shots.indexOf(s);
+    renderMid(); renderRight(); renderList(); renderTL();
+    toast('一键成片 ' + (i + 1) + '/' + todo.length + ' · 正在生成镜头 ' + s.no);
+    const prep = await prepareShotGen(s);
+    if (prep.error) { fail = '镜头 ' + s.no + '：' + prep.error; break; }
+    const good = await doGenVideo(s, prep.prompt, prep.refs, prep.dim, prep.cont);
+    if (!good) { fail = '镜头 ' + s.no + ' 生成失败' + (autoStop ? '（已停止）' : ''); break; }
+    ok++;
+  }
+  autoRun = false;
+  if (ab) ab.disabled = false;
+  if (vb) vb.disabled = false;
+  renderMid(); renderList(); renderTL();
+  if (fail) toast('一键成片中断 · ' + fail + ' · 已完成 ' + ok + ' 条');
+  else toast('一键成片完成：共生成 ' + ok + ' 条');
+}
+
+async function doGenVideo(s, prompt, refs, dim, cont){
+  const ui = makeProg({ prog: 'prog', fill: 'pfill', pct: 'ppct',
+                        stage: 'pstage', log: 'log' });
+  busy = true;
+  $('vidbtn').disabled = true;
+  let ok = false;
+  ui.start();
+  const started = Date.now();
+  const est = videoEst(s.duration);
+  try {
+    await ensureComfy();
+    ui.stage('上传参考图', 4);
+    const imgs = [];
+    for (const r of refs.slice(0, 9)) imgs.push(await imageDataUrl(r));
+    if (cont && cont.dataurl) imgs.push(cont.dataurl);
+    s.vcands = s.vcands || [];
+    ui.stage('提交任务', 8);
+    const jid = await submitJob('audio_video_r2v', prompt, s.duration, null, dim,
+                                { kind: 'video' }, imgs);
+    curJobId = jid;
+    $('cancelGen').style.display = '';
+    const job = await waitJob(jid, j => ui.stage(
+      (j.stage || '生成中') + (j.size ? ' · ' + j.size : '') + (j.refs ? ' · ' + j.refs + ' 张参考' : ''),
+      Math.min(98, 8 + Math.round(pctByTime(started, est) * 0.9))));
+    const f = pickFile(job.files, 'video');
+    if (!f) throw new Error('任务完成但没有产物文件');
+    let file = { filename: f.filename, subfolder: f.subfolder || '' };
+    if (!dialogueLines(s).length){
+      // 无台词镜头：模型仍可能自编人声，统一替换成空白音轨，保证静默
+      const m = await fetch('/api/silence', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(file)
+      }).then(r => r.ok ? r.json() : null).catch(() => null);
+      if (m && m.filename) file = { filename: m.filename, subfolder: m.subfolder || '' };
+    }
+    s.vcands.push(file);
+    if (!s.video){
+      s.video = { filename: file.filename, subfolder: file.subfolder || '' };
+      s.state = 'video';
+    }
+    markSaved();
+    ui.done();
+    renderCands(); renderList(); renderMid(); renderRight(); renderTL(); renderFilm();
+    toast('生成 1 条视频，点缩略图选用');
+    ok = true;
+  } catch (e) {
+    if (e.message === '已取消生成'){
+      ui.stage('已取消');
+      toast('已取消生成');
+    } else {
+      ui.fail(e.message);
+      toast('视频失败：' + e.message);
+    }
+  } finally {
+    busy = false;
+    curJobId = null;
+    $('cancelGen').style.display = 'none';
+    if (!autoRun) $('vidbtn').disabled = false;
+    ui.end();
+    renderMid();
+  }
+  return ok;
+}
+
+function askCancelGen(){
+  if (!curJobId) return toast('当前没有正在生成的任务');
+  openModal('取消生成',
+    '这条镜头视频正在生成，取消后本次不会产出成片。确定要取消吗？',
+    () => reallyCancelGen());
+  $('moOk').textContent = '确认取消';
+}
+
+async function reallyCancelGen(){
+  const id = curJobId;
+  if (!id) return;
+  if (autoRun) autoStop = true;   // 一键成片中取消：当前这条停下，后续不再继续
+  try {
+    await fetch('/api/cancel', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id })
+    });
+    toast('已发出取消，等任务停止');
+  } catch (e){
+    toast('取消失败：' + e.message);
+  }
+}
+
+function pickCand(i){
+  const s = P.shots[cur];
+  if (!s) return;
+  const c = (s.candidates || [])[i];
+  if (!c) return;
+  s.image = { filename: c.filename, subfolder: c.subfolder || '' };
+  s.state = 'image';
+  markSaved();
+  renderCands(); renderMid(); renderRight(); renderTL(); renderFilm();
+  toast('已选用第 ' + (i + 1) + ' 张');
+}
+
+function pickVid(i){
+  const s = P.shots[cur];
+  if (!s) return;
+  const c = (s.vcands || [])[i];
+  if (!c) return;
+  s.video = { filename: c.filename, subfolder: c.subfolder || '' };
+  s.state = 'video';
+  markSaved();
+  renderCands(); renderMid(); renderRight(); renderTL(); renderFilm();
+  toast('已选用第 ' + (i + 1) + ' 条视频');
+}
+
+function delCand(i, isVideo){
+  const s = P.shots[cur];
+  if (!s) return;
+  const list = (isVideo ? s.vcands : s.candidates) || [];
+  if (!list[i]) return;
+  if (isVideo){
+    openModal('移除这条成片？',
+      '确定把「视频 ' + (i + 1) + '」从这个镜头的候选里移除吗？<br>' +
+      '<span style="color:#8b93a3">文件仍保留在 ComfyUI 输出目录，只是不再出现在候选里。</span>',
+      () => doDelCand(i, true));
+    $('moOk').textContent = '确认移除';
+    return;
+  }
+  doDelCand(i, false);
+}
+
+function doDelCand(i, isVideo){
+  const s = P.shots[cur];
+  if (!s) return;
+  const key = isVideo ? 'vcands' : 'candidates';
+  const list = s[key] || [];
+  const gone = list.splice(i, 1)[0];
+  if (!isVideo && s.image && gone && s.image.filename === gone.filename){
+    s.image = list.length
+      ? { filename: list[list.length - 1].filename, subfolder: list[list.length - 1].subfolder || '' }
+      : null;
+    s.state = s.image ? 'image' : 'empty';
+  }
+  if (isVideo && s.video && gone && s.video.filename === gone.filename){
+    s.video = list.length
+      ? { filename: list[list.length - 1].filename, subfolder: list[list.length - 1].subfolder || '' }
+      : null;
+    s.state = s.video ? 'video' : (s.image ? 'image' : 'empty');
+  }
+  markSaved();
+  renderCands(); renderMid(); renderRight(); renderTL(); renderFilm();
+}
+
+function renderCands(){
+  const s = P.shots[cur];
+  const box = $('cands');
+  const list = (s && s.candidates) || [];
+  if (!list.length){
+    box.classList.remove('on');
+    box.innerHTML = '';
+  } else {
+    box.classList.add('on');
+    box.innerHTML = list.map((c, i) => {
+      const on = s.image && s.image.filename === c.filename ? ' on' : '';
+      return '<div class="cand' + on + '" onclick="pickCand(' + i + ')">' +
+        '<img src="' + fileUrl(c) + '"><span>图 ' + (i + 1) + '</span>' +
+        '<div class="del" onclick="event.stopPropagation();delCand(' + i + ',false)">×</div></div>';
+    }).join('');
+  }
+  const vbox = $('vcands');
+  const vlist = (s && s.vcands) || [];
+  if (!vlist.length){
+    vbox.classList.remove('on');
+    vbox.innerHTML = '';
+  } else {
+    vbox.classList.add('on');
+    vbox.innerHTML = vlist.map((c, i) => {
+      const on = s.video && s.video.filename === c.filename ? ' on' : '';
+      const vert = videoCfg().ratio === '9:16' ? ' vert' : '';
+      return '<div class="cand' + on + vert + '" onclick="pickVid(' + i + ')">' +
+        '<video src="' + fileUrl(c) + '" muted playsinline preload="metadata"></video>' +
+        '<span>视频 ' + (i + 1) + '</span>' +
+        '<div class="del" onclick="event.stopPropagation();delCand(' + i + ',true)">×</div></div>';
+    }).join('');
+  }
+}
+
+function batchShots(){
+  const todo = P.shots.filter(s => s.state !== 'video');
+  if (!todo.length) return toast('所有镜头都已完成');
+  toast('批量生成 ' + todo.length + ' 个镜头（原型模拟，按剧本时长排队）');
+  todo.forEach((s, i) => setTimeout(() => {
+    s.state = s.state === 'empty' ? 'image' : s.state;
+    renderList(); renderTL(); renderFilm();
+  }, 500 + i * 260));
+  setTimeout(() => toast('批量生成已提交（原型模拟）'), 900);
+}
+
+function exportLines(){
+  const lines = P.shots.filter(s => s.dialogue).map(s => '镜头 ' + s.no + '：' + s.dialogue);
+  toast('已导出 ' + lines.length + ' 条台词（原型模拟）');
+}
+
+function saveFilm(){
+  const clips = filmClips();
+  if (!clips.length) return toast('还没有可保存的镜头');
+  P.film = clips; markSaved();
+  toast('已保存至项目 · ' + clips.length + ' 个镜头 / ' + fmt(clips.reduce((a, c) => a + c.duration, 0)));
+}
+
+function exportFilm(){
+  const clips = filmClips().filter(c => c && c.filename);
+  if (!clips.length) return toast('还没有可拼接的镜头');
+  toast('拼接中… → ' + clips.length + ' 个镜头');
+  fetch('/api/film', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      project: pid,
+      clips: clips.map(c => ({ filename: c.filename, subfolder: c.subfolder || '' }))
+    })
+  }).then(r => r.json().then(j => ({ ok: r.ok, j })))
+    .then(({ ok, j }) => {
+      if (!ok) return toast('拼接失败：' + (j.error || '未知错误'));
+      const f = { filename: j.filename, subfolder: j.subfolder };
+      const u = fileUrl(f);
+      openModal('成片已导出',
+        '<video src="' + u + '" controls preload="metadata" ' +
+        'style="width:100%;max-height:50vh;background:#000;border-radius:6px"></video>' +
+        '<div style="margin-top:10px;font-size:13px;color:#9aa">' +
+        j.clips + ' 个镜头 · 总长 ' + fmt(Math.round(j.duration || 0)) + ' · ' +
+        (j.mode === 'copy' ? '直接拷贝（无损）' : '已重编码统一画幅') + ' · ' +
+        '<a href="' + u + '" download="' + j.filename + '">下载 mp4</a></div>');
+      toast('成片已生成 · ' + j.filename);
+    })
+    .catch(e => toast('拼接失败：' + e));
+}
+
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('on'), 2200);
+}
+
+/* ================= 总渲染 ================= */
+function renderEp(){
+  const sel = $('epsel');
+  if (!sel || !P) return;
+  const all = (projectList || []).slice().sort((a, b) => (a.episode || 0) - (b.episode || 0));
+  if (all.length <= 1){ sel.style.display = 'none'; return; }
+  sel.style.display = '';
+  sel.innerHTML = all.map(x =>
+    '<option value="' + x.id + '"' + (x.id === pid ? ' selected' : '') + '>' + esc(x.title) + '</option>').join('');
+  sel.onchange = () => openProject(sel.value, view);
+}
+
+function renderAll(full){
+  renderList(); renderMid(); renderRight(); renderTL();
+  $('cn').textContent = P.chars.length;
+  $('sn').textContent = P.shots.length;
+  const total = P.shots.reduce((a,s)=>a+s.duration,0);
+  const doneCnt = P.shots.filter(s => s.state === 'video').length;
+  $('stat').textContent = '共 ' + P.shots.length + ' 个镜头 · 总 ' + fmt(total) + ' · 已完成 ' + doneCnt;
+  $('dstamp').textContent = fmt(total);
+  renderCast(); renderFilm(); renderEp();
+  if (full) renderScenes();
+}
+
+/* ================= 渲染：项目资产库 ================= */
+const LIB_KIND_NAME = { char: '角色', set: '场景', prop: '道具' };
+
+function libKey(f){
+  return (((f && f.subfolder) || '').replace(/\\/g, '/') + '/' +
+          String((f && f.filename) || '')).toLowerCase();
+}
+
+function libRefIndex(){
+  const map = {};
+  const add = (f, ref) => {
+    if (!f || !f.filename) return;
+    const k = libKey(f);
+    const arr = map[k] || (map[k] = []);
+    const old = arr.find(x => x.kind === ref.kind && x.id === ref.id);
+    if (!old) arr.push(ref);
+    else if (ref.chosen) old.chosen = true;
+  };
+  const scanAsset = (kind, arr) => (arr || []).forEach(it => {
+    (it.cands || []).forEach(f => add(f, { kind: kind, id: it.id, name: it.name }));
+    if (it.image) add(it.image, { kind: kind, id: it.id, name: it.name, chosen: true });
+  });
+  scanAsset('char', P.chars);
+  scanAsset('set', P.sets);
+  scanAsset('prop', P.props);
+  (P.shots || []).forEach(s => {
+    (s.candidates || []).forEach(f =>
+      add(f, { kind: 'shot', id: s.no + ':i', shotNo: s.no, video: false, name: '镜头 ' + s.no }));
+    if (s.image) add(s.image,
+      { kind: 'shot', id: s.no + ':i', shotNo: s.no, video: false, name: '镜头 ' + s.no, chosen: true });
+    (s.vcands || []).forEach(f =>
+      add(f, { kind: 'shot', id: s.no + ':v', shotNo: s.no, video: true, name: '镜头 ' + s.no }));
+    if (s.video) add(s.video,
+      { kind: 'shot', id: s.no + ':v', shotNo: s.no, video: true, name: '镜头 ' + s.no, chosen: true });
+  });
+  return map;
+}
+
+function libRefLabel(r){
+  return r.kind === 'shot'
+    ? '分镜 ' + r.shotNo + (r.video ? ' · 视频' : ' · 图')
+    : LIB_KIND_NAME[r.kind] + '·' + r.name;
+}
+
+const LIB_GROUPS = [
+  { key: 'char', name: '角色图' },
+  { key: 'set', name: '场景图' },
+  { key: 'prop', name: '道具图' },
+  { key: 'shot', name: '分镜图' },
+  { key: 'video', name: '视频' },
+  { key: 'archive', name: '旧图归档' }
+];
+
+function libGroupOf(f){
+  if (f.is_video) return 'video';
+  if (f.kind === 'char' || f.kind === 'set' || f.kind === 'prop') return f.kind;
+  if (f.kind === 'shot') return 'shot';
+  return 'archive';
+}
+
+function libCards(rows, refs){
+  return rows.map(f => {
+    const idx = libShown.push(f) - 1;
+    const rs = refs[libKey(f)] || [];
+    const chosen = rs.some(r => r.chosen);
+    const label = rs.length
+      ? Array.from(new Set(rs.map(libRefLabel))).join(' / ')
+      : (f.source === 'archive' ? '旧图 · 未引用' : '未引用');
+    const state = chosen
+      ? '<span class="lbstate ok">已选定</span>'
+      : (rs.length ? '<span class="lbstate">候选中</span>' : '');
+    const media = f.is_video
+      ? '<video src="' + fileUrl(f) + '" muted playsinline preload="metadata"></video>'
+      : '<img src="' + fileUrl(f) + '" alt="" loading="lazy">';
+    return '<div class="libcard' + (chosen ? ' sel' : '') + '" onclick="libPickIdx(' + idx + ')">' +
+      media + state + '<div class="lbtag">' + esc(label) + '</div></div>';
+  }).join('');
+}
+
+async function loadLibrary(){
+  if (!P || !pid) return;
+  const target = pid;
+  libLoadedFor = target;
+  $('libGrid').innerHTML = '<div class="libempty">读取资产库…</div>';
+  try {
+    const r = await fetch('/api/library?id=' + encodeURIComponent(target));
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    if (pid !== target || libLoadedFor !== target) return;
+    libFiles = d.files || [];
+  } catch (e){
+    if (pid !== target) return;
+    libFiles = [];
+    $('libGrid').innerHTML = '<div class="libempty">读取失败：' + esc(e.message) + '</div>';
+    $('libN').textContent = '0';
+    $('libIn').textContent = '0';
+    return;
+  }
+  renderLibrary();
+}
+
+function renderLibrary(){
+  if (!P || !pid) return;
+  const grid = $('libGrid');
+  if (!grid) return;
+  const refs = libRefIndex();
+  libShown = [];
+  $('libN').textContent = libFiles.length;
+  $('libIn').textContent = libFiles.filter(f => (refs[libKey(f)] || []).length).length;
+  if (!libFiles.length){
+    grid.innerHTML = '<div class="libempty">这个项目还没有产物图，旧图归档里也没有可用图片</div>';
+    return;
+  }
+  const buckets = {};
+  libFiles.forEach(f => {
+    const g = libGroupOf(f);
+    (buckets[g] = buckets[g] || []).push(f);
+  });
+  const shown = LIB_GROUPS.filter(g => (libFilter === 'all' || libFilter === g.key) && buckets[g.key]);
+  if (!shown.length){
+    grid.innerHTML = '<div class="libempty">当前筛选下没有图片</div>';
+    return;
+  }
+  grid.innerHTML = shown.map(g =>
+    '<div class="libsect"><div class="libsechead">' + g.name + ' <b>' + buckets[g.key].length + ' 张</b></div>' +
+    '<div class="libgrid">' + libCards(buckets[g.key], refs) + '</div></div>').join('');
+}
+
+function libPickIdx(i){
+  const f = libShown[i];
+  if (!f) return;
+  const refs = libRefIndex()[libKey(f)] || [];
+  const assets = refs.filter(r => r.kind !== 'shot');
+  if (refs.length === 1 && assets.length === 1){
+    libApplyAsset(assets[0].kind, assets[0].id, f);
+    return;
+  }
+  openLibTarget(f, i, refs);
+}
+
+function libApplyAsset(kind, id, f){
+  const it = assetArr(kind).find(x => x.id === id);
+  if (!it) return toast('这个资产已经不在了');
+  it.cands = it.cands || [];
+  if (!it.cands.some(c => libKey(c) === libKey(f)))
+    it.cands.push({ filename: f.filename, subfolder: f.subfolder || '' });
+  it.image = { filename: f.filename, subfolder: f.subfolder || '' };
+  it.locked = true;
+  markSaved();
+  renderCast();
+  renderLibrary();
+  toast(it.name + ' 已用资产库这张图 · 已确认');
+}
+
+function libApplyShot(no, video, f){
+  const s = (P.shots || []).find(x => x.no === no);
+  if (!s) return toast('这个镜头已经不在了');
+  const key = video ? 'vcands' : 'candidates';
+  s[key] = s[key] || [];
+  if (!s[key].some(c => libKey(c) === libKey(f)))
+    s[key].push({ filename: f.filename, subfolder: f.subfolder || '' });
+  if (video){
+    s.video = { filename: f.filename, subfolder: f.subfolder || '' };
+    s.state = 'video';
+  } else {
+    s.image = { filename: f.filename, subfolder: f.subfolder || '' };
+    if (s.state !== 'video') s.state = 'image';
+  }
+  markSaved();
+  renderAll(false);
+  renderLibrary();
+  toast('镜头 ' + no + (video ? ' 的视频' : ' 的图') + '已选用资产库这张');
+}
+
+let libPickState = null;
+let libPickRows = [];
+
+async function openLibPick(scope, kind, id, video){
+  if (!P || !pid) return;
+  if (!libFiles.length) await loadLibrary();
+  let rows;
+  if (scope === 'asset'){
+    rows = libFiles.filter(f => !f.is_video && f.kind === kind);
+  } else if (video){
+    rows = libFiles.filter(f => f.is_video);
+  } else {
+    rows = libFiles.filter(f => !f.is_video);
+  }
+  libPickState = { scope: scope, kind: kind, id: id, video: !!video };
+  libPickRows = rows;
+  const it = scope === 'asset' ? assetArr(kind).find(x => x.id === id) : null;
+  const title = scope === 'asset'
+    ? '换图 · ' + assetKindName(kind) + (it ? '「' + it.name + '」' : '')
+    : '换' + (video ? '视频' : '图') + ' · 镜头 ' + P.shots[cur].no;
+  const body = rows.length
+    ? '<div class="libgrid" style="grid-template-columns:repeat(auto-fill,minmax(118px,1fr))">' +
+      rows.map((f, i) =>
+        '<div class="libcard" onclick="libPickApply(' + i + ')">' +
+        (f.is_video
+          ? '<video src="' + fileUrl(f) + '" muted playsinline preload="metadata"></video>'
+          : '<img src="' + fileUrl(f) + '" alt="" loading="lazy">') +
+        '<div class="lbtag">' + esc(f.filename) + '</div></div>').join('') +
+      '</div>'
+    : '<div class="libempty" style="padding:40px 0">' +
+      (scope === 'asset'
+        ? '资产库里还没有同类型的图片，先去「设定」抽 4 张'
+        : '还没有' + (video ? '视频' : '可用的图') + '，先生成或在资产库里找') +
+      '</div>';
+  openModal(title, body, null);
+  $('moOk').style.display = 'none';
+}
+
+function libPickApply(i){
+  const f = libPickRows[i];
+  if (!f || !libPickState) return;
+  if (libPickState.scope === 'asset') libApplyAsset(libPickState.kind, libPickState.id, f);
+  else libApplyShot(P.shots[cur].no, libPickState.video, f);
+  closeModal();
+}
+
+function openLibTarget(f, idx, refs){
+  const parts = [];
+  if (refs.length){
+    parts.push('<label class="mlbl">这张图在项目里已被引用</label><div class="libpick">');
+    refs.forEach(r => {
+      const label = libRefLabel(r) + (r.chosen ? '（当前选定）' : '');
+      const call = r.kind === 'shot'
+        ? "libApplyShot('" + r.shotNo + "'," + (r.video ? 'true' : 'false') +
+          ",libShown[" + idx + "]);closeModal()"
+        : "libApplyAsset('" + r.kind + "','" + r.id + "',libShown[" + idx + "]);closeModal()";
+      parts.push('<button class="btn ghost sm" onclick="' + call + '">' + esc(label) + '</button>');
+    });
+    parts.push('</div>');
+  }
+  [['char', '角色'], ['set', '场景'], ['prop', '道具']].forEach(g => {
+    const arr = g[0] === 'char' ? P.chars : g[0] === 'set' ? P.sets : P.props;
+    if (!arr.length) return;
+    parts.push('<label class="mlbl">设为' + g[1] + '的图</label><div class="libpick">');
+    arr.forEach(it => {
+      parts.push('<button class="btn ghost sm" onclick="libApplyAsset(\'' + g[0] + '\',\'' + it.id +
+        '\',libShown[' + idx + ']);closeModal()">' + esc(it.name) + '</button>');
+    });
+    parts.push('</div>');
+  });
+  if ((P.shots || []).length){
+    parts.push('<label class="mlbl">替换镜头的' + (f.is_video ? '视频' : '图') + '</label><div class="libpick">');
+    P.shots.forEach(s => {
+      parts.push('<button class="btn ghost sm" onclick="libApplyShot(\'' + s.no + '\',' +
+        (f.is_video ? 'true' : 'false') + ',libShown[' + idx + ']);closeModal()">镜头 ' +
+        esc(s.no) + '</button>');
+    });
+    parts.push('</div>');
+  }
+  openModal('用这张资产库' + (f.is_video ? '视频' : '图片'), parts.join(''), null);
+  $('moOk').style.display = 'none';
+}
+
+/* ================= 启动 ================= */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && P && pid){
+    clearTimeout(saveTimer);
+    fetch('/api/project', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(P), keepalive: true
+    }).catch(() => {});
+  }
+});
+
+qrender();
+(async () => {
+  const t = parseHash();
+  if (!t || t.view === 'home'){ goto('home'); return; }
+  const ok = await applyHash();
+  if (!ok) goto('home');
+})();
+</script>
+</body>
+</html>
